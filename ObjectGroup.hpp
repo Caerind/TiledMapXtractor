@@ -17,26 +17,43 @@ class ObjectBase : public PropertiesHolder, public sf::Drawable
     public:
         ObjectBase();
 
-        virtual ObjectType getType() const = 0;
+        typedef std::shared_ptr<ObjectBase> Ptr;
+
+        virtual ObjectType getObjectType() const = 0;
 
         virtual void loadFromNode(pugi::xml_node& object);
         virtual void saveToNode(pugi::xml_node& object);
 
-        virtual void setColor(sf::Color const& color);
+        virtual void setColor(sf::Color const& color) = 0;
 
-        sf::Vector2f getPosition() const;
-        unsigned int getId() const;
+        virtual unsigned int getId() const;
+        virtual unsigned int getGid() const;
+        virtual std::string getName() const;
+        virtual std::string getType() const;
+        virtual sf::Vector2f getPosition() const;
+        virtual sf::Vector2f getSize() const;
+        virtual float getRotation() const;
+        virtual bool isVisible() const;
+
+        virtual void setId(unsigned int id);
+        virtual void setGid(unsigned int gid);
+        virtual void setName(std::string const& name);
+        virtual void setType(std::string const& type);
+        virtual void setPosition(sf::Vector2f const& position);
+        virtual void setSize(sf::Vector2f const& size);
+        virtual void setRotation(float rotation);
+        virtual void setVisible(bool visible);
 
         virtual void draw(sf::RenderTarget& target, sf::RenderStates states = sf::RenderStates()) const = 0;
 
     protected:
         unsigned int mId;
+        unsigned int mGid;
         std::string mName;
         std::string mType;
         sf::Vector2f mPosition;
         sf::Vector2f mSize;
         float mRotation;
-        unsigned int mGid;
         bool mVisible;
 };
 
@@ -45,9 +62,11 @@ class ObjectBase : public PropertiesHolder, public sf::Drawable
 class Object : public detail::ObjectBase
 {
     public:
-        Object(Map* map);
+        Object(Map& map);
 
-        ObjectType getType() const;
+        typedef std::shared_ptr<Object> Ptr;
+
+        ObjectType getObjectType() const;
 
         void loadFromNode(pugi::xml_node& object);
 
@@ -56,7 +75,7 @@ class Object : public detail::ObjectBase
         void draw(sf::RenderTarget& target, sf::RenderStates states = sf::RenderStates()) const;
 
     private:
-        Map* mMap;
+        Map& mMap;
         sf::RectangleShape mShape;
 };
 
@@ -65,7 +84,9 @@ class Ellipse : public detail::ObjectBase
     public:
         Ellipse();
 
-        ObjectType getType() const;
+        typedef std::shared_ptr<Ellipse> Ptr;
+
+        ObjectType getObjectType() const;
 
         void loadFromNode(pugi::xml_node& object);
         void saveToNode(pugi::xml_node& object);
@@ -83,7 +104,9 @@ class Polygon : public detail::ObjectBase
     public:
         Polygon();
 
-        ObjectType getType() const;
+        typedef std::shared_ptr<Polygon> Ptr;
+
+        ObjectType getObjectType() const;
 
         void loadFromNode(pugi::xml_node& object);
         void saveToNode(pugi::xml_node& object);
@@ -101,7 +124,9 @@ class Polyline : public detail::ObjectBase
     public:
         Polyline();
 
-        ObjectType getType() const;
+        typedef std::shared_ptr<Polyline> Ptr;
+
+        ObjectType getObjectType() const;
 
         void loadFromNode(pugi::xml_node& object);
         void saveToNode(pugi::xml_node& object);
@@ -117,7 +142,7 @@ class Polyline : public detail::ObjectBase
 class ObjectGroup : public detail::LayerBase
 {
     public:
-        ObjectGroup(Map* map);
+        ObjectGroup(Map& map);
 
         LayerType getType() const;
 
@@ -126,13 +151,23 @@ class ObjectGroup : public detail::LayerBase
 
         void draw(sf::RenderTarget& target, sf::RenderStates states = sf::RenderStates()) const;
 
+        sf::Color getColor() const;
+        void setColor(sf::Color const& color);
+
+        std::string getDrawOrder() const;
+        void setDrawOrder(std::string const& order);
+
         void sort(std::string const& order = "topdown");
 
+        std::size_t getObjectCount() const;
+        detail::ObjectBase::Ptr getObject(std::size_t index);
+        void addObject(detail::ObjectBase::Ptr object);
+
     protected:
-        Map* mMap;
+        Map& mMap;
         std::string mColor;
         std::string mDrawOrder;
-        std::vector<detail::ObjectBase*> mObjects;
+        std::vector<detail::ObjectBase::Ptr> mObjects;
 };
 
 } // namespace tmx

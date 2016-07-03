@@ -16,7 +16,7 @@ Tileset::Tileset()
     mTileOffset = {0.f, 0.f};
 }
 
-bool Tileset::loadFromNode(pugi::xml_node& tileset)
+bool Tileset::loadFromNode(pugi::xml_node& tileset, bool fromTsx)
 {
     if (!tileset)
     {
@@ -34,6 +34,11 @@ bool Tileset::loadFromNode(pugi::xml_node& tileset)
         if (attr.name() == std::string("margin")) mMargin = attr.as_uint();
         if (attr.name() == std::string("tilecount")) mTileCount = attr.as_uint();
         if (attr.name() == std::string("columns")) mColumns = attr.as_uint();
+    }
+
+    if (mSource != "" && !fromTsx)
+    {
+        return loadFromFile(mSource);
     }
 
     pugi::xml_node offset = tileset.child("offset");
@@ -90,11 +95,42 @@ bool Tileset::loadFromNode(pugi::xml_node& tileset)
     return true;
 }
 
-bool Tileset::saveToNode(pugi::xml_node& tileset)
+bool Tileset::loadFromFile(std::string const& filename)
 {
-    tileset.append_attribute("firstgid") = mFirstGid;
-    if (mSource != "")
+    if (filename == "")
+    {
+        std::cerr << "Uncorrect filename" << std::endl;
+        return false;
+    }
+    pugi::xml_document doc;
+    if (!doc.load_file(filename.c_str()))
+    {
+        std::cerr << "The document (" << filename << ") cannot be loaded" << std::endl;
+        return false;
+    }
+    pugi::xml_node tileset = doc.child("tileset");
+    if (!tileset)
+    {
+        std::cerr << "The document has no \"tileset\" node" << std::endl;
+        return false;
+    }
+    return loadFromNode(tileset, true);
+}
+
+bool Tileset::saveToNode(pugi::xml_node& tileset, bool fromTsx)
+{
+    if (!tileset)
+    {
+        std::cerr << "Invalid tileset node" << std::endl;
+        return false;
+    }
+    if (!fromTsx)
+        tileset.append_attribute("firstgid") = mFirstGid;
+    if (mSource != "" && !fromTsx)
+    {
         tileset.append_attribute("source") = mSource.c_str();
+        return saveToFile(mSource);
+    }
     tileset.append_attribute("name") = mName.c_str();
     tileset.append_attribute("tilewidth") = mTileSize.x;
     tileset.append_attribute("tileheight") = mTileSize.y;
@@ -136,6 +172,18 @@ bool Tileset::saveToNode(pugi::xml_node& tileset)
     saveProperties(tileset);
 
     return true;
+}
+
+bool Tileset::saveToFile(std::string const& filename)
+{
+    if (filename == "")
+    {
+        std::cerr << "Uncorrect filename" << std::endl;
+        return false;
+    }
+    pugi::xml_document doc;
+    pugi::xml_node tileset = doc.append_child("tileset");
+    return saveToNode(tileset, true);
 }
 
 std::string Tileset::getName() const

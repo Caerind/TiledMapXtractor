@@ -6,30 +6,6 @@ namespace tmx
 namespace detail
 {
 
-sf::Color stringToColor(std::string const& color)
-{
-    std::string c = color;
-    if (c != "")
-    {
-        if (c[0] == '#')
-        {
-            c.erase(c.begin());
-        }
-        int hexTrans;
-        std::stringstream ss(c);
-        ss >> std::hex >> hexTrans;
-        if (hexTrans >= 0)
-        {
-            unsigned char red, green, blue;
-            red = hexTrans >> 16;
-            green = (hexTrans >> 8) & 0xff;
-            blue = hexTrans & 0xff;
-            return sf::Color(red, green, blue);
-        }
-    }
-    return sf::Color::Transparent;
-}
-
 PropertiesHolder::PropertiesHolder()
 {
 }
@@ -182,7 +158,7 @@ std::string Image::getSource() const
 
 sf::Color Image::getTransparent() const
 {
-    return stringToColor(mTrans);
+    return fromString<sf::Color>(mTrans);
 }
 
 sf::Vector2u Image::getSize() const

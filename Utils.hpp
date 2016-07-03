@@ -2,6 +2,7 @@
 #define UTILS_HPP
 
 #include <iostream>
+#include <memory>
 #include <sstream>
 #include <unordered_map>
 
@@ -71,6 +72,11 @@ template <> inline std::string toString<sf::Vector2f>(sf::Vector2f const& value)
     return oss.str();
 }
 
+template <> inline std::string toString<sf::Color>(sf::Color const& value)
+{
+    return ""; // TODO : Color To String
+}
+
 template <> inline std::string fromString<std::string>(std::string const& string)
 {
     return string;
@@ -103,7 +109,29 @@ template <> inline sf::Vector2f fromString<sf::Vector2f>(std::string const& stri
     return vector;
 }
 
-sf::Color stringToColor(std::string const& color);
+template <> inline sf::Color fromString<sf::Color>(std::string const& string)
+{
+    std::string c = string;
+    if (c != "")
+    {
+        if (c[0] == '#')
+        {
+            c.erase(c.begin());
+        }
+        int hexTrans;
+        std::stringstream ss(c);
+        ss >> std::hex >> hexTrans;
+        if (hexTrans >= 0)
+        {
+            unsigned char red, green, blue;
+            red = hexTrans >> 16;
+            green = (hexTrans >> 8) & 0xff;
+            blue = hexTrans & 0xff;
+            return sf::Color(red, green, blue);
+        }
+    }
+    return sf::Color::Transparent;
+}
 
 class PropertiesHolder
 {

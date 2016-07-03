@@ -9,24 +9,22 @@ namespace detail
 ObjectBase::ObjectBase()
 {
     mId = 0;
+    mGid = 0;
     mName = "";
     mType = "";
     mPosition = {0.f, 0.f};
     mSize = {0.f, 0.f};
-    mGid = 0;
+    mRotation = 0.f;
     mVisible = true;
 }
 
 void ObjectBase::loadFromNode(pugi::xml_node& object)
 {
-    if (!object)
-    {
-        std::cerr << "Invalid object node" << std::endl;
-        return;
-    }
+    if (!object) return;
     for (pugi::xml_attribute attr = object.first_attribute(); attr; attr = attr.next_attribute())
     {
         if (attr.name() == std::string("id")) mId = attr.as_uint();
+        if (attr.name() == std::string("gid")) mGid = attr.as_uint();
         if (attr.name() == std::string("name")) mName = attr.as_string();
         if (attr.name() == std::string("type")) mType = attr.as_string();
         if (attr.name() == std::string("x")) mPosition.x = attr.as_float();
@@ -34,7 +32,6 @@ void ObjectBase::loadFromNode(pugi::xml_node& object)
         if (attr.name() == std::string("width")) mSize.x = attr.as_float();
         if (attr.name() == std::string("height")) mSize.y = attr.as_float();
         if (attr.name() == std::string("rotation")) mRotation = attr.as_float();
-        if (attr.name() == std::string("gid")) mGid = attr.as_uint();
         if (attr.name() == std::string("visible")) mVisible = detail::fromString<bool>(attr.as_string());
     }
     loadProperties(object);
@@ -42,31 +39,17 @@ void ObjectBase::loadFromNode(pugi::xml_node& object)
 
 void ObjectBase::saveToNode(pugi::xml_node& object)
 {
-    if (!object)
-    {
-        std::cerr << "Invalid object node" << std::endl;
-        return;
-    }
-    if (mId != 0)
-        object.append_attribute("id") = mId;
-    if (mName != "")
-        object.append_attribute("name") = mName.c_str();
-    if (mType != "")
-        object.append_attribute("type") = mType.c_str();
-    if (mPosition.x != 0.f)
-        object.append_attribute("x") = mPosition.x;
-    if (mPosition.y != 0.f)
-        object.append_attribute("y") = mPosition.y;
-    if (mSize.x != 0.f)
-        object.append_attribute("width") = mSize.x;
-    if (mSize.y != 0.f)
-        object.append_attribute("height") = mSize.y;
-    if (mRotation != 0.f)
-        object.append_attribute("rotation") = mRotation;
-    if (mGid != 0)
-        object.append_attribute("gid") = mGid;
-    if (!mVisible)
-        object.append_attribute("visible") = false;
+    if (!object) return;
+    if (mId != 0) object.append_attribute("id") = mId;
+    if (mGid != 0) object.append_attribute("gid") = mGid;
+    if (mName != "") object.append_attribute("name") = mName.c_str();
+    if (mType != "") object.append_attribute("type") = mType.c_str();
+    if (mPosition.x != 0.f) object.append_attribute("x") = mPosition.x;
+    if (mPosition.y != 0.f) object.append_attribute("y") = mPosition.y;
+    if (mSize.x != 0.f) object.append_attribute("width") = mSize.x;
+    if (mSize.y != 0.f) object.append_attribute("height") = mSize.y;
+    if (mRotation != 0.f) object.append_attribute("rotation") = mRotation;
+    if (!mVisible) object.append_attribute("visible") = false;
     saveProperties(object);
 }
 
@@ -74,23 +57,93 @@ void ObjectBase::setColor(sf::Color const& color)
 {
 }
 
-sf::Vector2f ObjectBase::getPosition() const
-{
-    return mPosition;
-}
-
 unsigned int ObjectBase::getId() const
 {
     return mId;
 }
 
+unsigned int ObjectBase::getGid() const
+{
+    return mGid;
+}
+
+std::string ObjectBase::getName() const
+{
+    return mName;
+}
+
+std::string ObjectBase::getType() const
+{
+    return mType;
+}
+
+sf::Vector2f ObjectBase::getPosition() const
+{
+    return mPosition;
+}
+
+sf::Vector2f ObjectBase::getSize() const
+{
+    return mSize;
+}
+
+float ObjectBase::getRotation() const
+{
+    return mRotation;
+}
+
+bool ObjectBase::isVisible() const
+{
+    return mVisible;
+}
+
+void ObjectBase::setId(unsigned int id)
+{
+    mId = id;
+}
+
+void ObjectBase::setGid(unsigned int gid)
+{
+    mGid = gid;
+}
+
+void ObjectBase::setName(std::string const& name)
+{
+    mName = name;
+}
+
+void ObjectBase::setType(std::string const& type)
+{
+    mType = type;
+}
+
+void ObjectBase::setPosition(sf::Vector2f const& position)
+{
+    mPosition = position;
+}
+
+void ObjectBase::setSize(sf::Vector2f const& size)
+{
+    mSize = size;
+}
+
+void ObjectBase::setRotation(float rotation)
+{
+    mRotation = rotation;
+}
+
+void ObjectBase::setVisible(bool visible)
+{
+    mVisible = visible;
+}
+
 } // namespace detail
 
-Object::Object(Map* map) : mMap(map)
+Object::Object(Map& map) : mMap(map)
 {
 }
 
-ObjectType Object::getType() const
+ObjectType Object::getObjectType() const
 {
     return tmx::ESimple;
 }
@@ -103,7 +156,7 @@ void Object::loadFromNode(pugi::xml_node& object)
     mShape.setRotation(mRotation);
     if (mGid != 0)
     {
-        Tileset* tileset = mMap->getTileset(mGid);
+        Tileset* tileset = mMap.getTileset(mGid);
         if (tileset == nullptr)
         {
             return;
@@ -142,7 +195,7 @@ Ellipse::Ellipse()
 {
 }
 
-ObjectType Ellipse::getType() const
+ObjectType Ellipse::getObjectType() const
 {
     return tmx::EEllipse;
 }
@@ -192,7 +245,7 @@ Polygon::Polygon()
 {
 }
 
-ObjectType Polygon::getType() const
+ObjectType Polygon::getObjectType() const
 {
     return tmx::EPolygon;
 }
@@ -264,7 +317,7 @@ Polyline::Polyline()
 {
 }
 
-ObjectType Polyline::getType() const
+ObjectType Polyline::getObjectType() const
 {
     return tmx::EPolyline;
 }
@@ -341,11 +394,12 @@ void Polyline::draw(sf::RenderTarget& target, sf::RenderStates states) const
     }
 }
 
-ObjectGroup::ObjectGroup(Map* map)
+ObjectGroup::ObjectGroup(Map& map)
+: mMap(map)
+, mColor("#a0a0a4")
+, mDrawOrder("topdown")
+, mObjects()
 {
-    mMap = map;
-    mColor = "#a0a0a4";
-    mDrawOrder = "topdown";
 }
 
 LayerType ObjectGroup::getType() const
@@ -364,28 +418,26 @@ bool ObjectGroup::loadFromNode(pugi::xml_node& layer)
         if (attr.name() == std::string("color")) mColor = attr.as_string();
         if (attr.name() == std::string("draworder")) mDrawOrder = attr.as_string();
     }
-    sf::Color color = detail::stringToColor(mColor);
-    color.a = 255.f * mOpacity;
     for (pugi::xml_node object = layer.child("object"); object; object = object.next_sibling("object"))
     {
         if (object.child("ellipse"))
         {
-            mObjects.push_back(new Ellipse());
+            mObjects.push_back(std::make_shared<Ellipse>());
         }
         else if (object.child("polygon"))
         {
-            mObjects.push_back(new Polygon());
+            mObjects.push_back(std::make_shared<Polygon>());
         }
         else if (object.child("polyline"))
         {
-            mObjects.push_back(new Polyline());
+            mObjects.push_back(std::make_shared<Polyline>());
         }
         else
         {
-            mObjects.push_back(new Object(mMap));
+            mObjects.push_back(std::make_shared<Object>(mMap));
         }
         mObjects.back()->loadFromNode(object);
-        mObjects.back()->setColor(color);
+        mObjects.back()->setColor(getColor());
     }
     sort(mDrawOrder);
     return true;
@@ -416,11 +468,41 @@ void ObjectGroup::draw(sf::RenderTarget& target, sf::RenderStates states) const
     }
 }
 
+sf::Color ObjectGroup::getColor() const
+{
+    sf::Color color = detail::fromString<sf::Color>(mColor);
+    color.a = 255.f * mOpacity;
+    return color;
+}
+
+void ObjectGroup::setColor(sf::Color const& color)
+{
+    mColor = detail::toString<sf::Color>(color);
+}
+
+std::string ObjectGroup::getDrawOrder() const
+{
+    return mDrawOrder;
+}
+
+void ObjectGroup::setDrawOrder(std::string const& order)
+{
+    if ((order == "index" || order == "topdown") && mDrawOrder != order)
+    {
+        mDrawOrder = order;
+        sort(mDrawOrder);
+    }
+    else
+    {
+        std::cerr << "Unsupported draw order" << std::endl;
+    }
+}
+
 void ObjectGroup::sort(std::string const& order)
 {
     if (order == "index")
     {
-        std::sort(mObjects.begin(),mObjects.end(),[](detail::ObjectBase* a, detail::ObjectBase* b)
+        std::sort(mObjects.begin(),mObjects.end(),[](detail::ObjectBase::Ptr a, detail::ObjectBase::Ptr b)
         {
             if (a == nullptr || b == nullptr)
             {
@@ -431,7 +513,7 @@ void ObjectGroup::sort(std::string const& order)
     }
     else
     {
-        std::sort(mObjects.begin(),mObjects.end(),[](detail::ObjectBase* a, detail::ObjectBase* b)
+        std::sort(mObjects.begin(),mObjects.end(),[](detail::ObjectBase::Ptr a, detail::ObjectBase::Ptr b)
         {
             if (a == nullptr || b == nullptr)
             {
@@ -439,6 +521,48 @@ void ObjectGroup::sort(std::string const& order)
             }
             return (a->getPosition().y < b->getPosition().y);
         });
+    }
+}
+
+std::size_t ObjectGroup::getObjectCount() const
+{
+    return mObjects.size();
+}
+
+detail::ObjectBase::Ptr ObjectGroup::getObject(std::size_t index)
+{
+    if (0 <= index && index < mObjects.size())
+    {
+        return mObjects[index];
+    }
+    return nullptr;
+}
+
+void ObjectGroup::addObject(detail::ObjectBase::Ptr object)
+{
+    if (object != nullptr)
+    {
+        if (object->getId() != 0)
+        {
+            if (std::find_if(mObjects.begin(),mObjects.end(),[&object](detail::ObjectBase::Ptr obj) -> bool { return (obj->getId() == object->getId());}) == mObjects.end())
+            {
+                mObjects.push_back(object);
+                mObjects.back()->setColor(getColor());
+                sort(mDrawOrder);
+            }
+            else
+            {
+                std::cerr << "Object already in this group" << std::endl;
+            }
+        }
+        else
+        {
+            std::cerr << "Cant add an object with id 0" << std::endl;
+        }
+    }
+    else
+    {
+        std::cerr << "Cant add a nullptr" << std::endl;
     }
 }
 

@@ -4,9 +4,7 @@
 		<property name="value" value="ee" />
 		<property name="name" value="test" />
 	</properties>
-	<tileset firstgid="1" name="ortho" tilewidth="16" tileheight="16" tilecount="104" columns="8">
-		<image source="ortho.png" trans="ffffff" width="128" height="208" />
-	</tileset>
+	<tileset firstgid="1" source="ortho.tsx" />
 	<layer name="Calque 1" width="32" height="32">
 		<data encoding="base64" compression="zlib">eNrFl70OwjAMhAsSIJAqBv4GeIZuhQmYAL//E3EDlaqoTuzYCcM3QFwSOXdn2jdNcwU30FViAZZgBe7gAZ6R+t75jC0gsAUv8AafSL3kjBoO4AhOzDoFn2NnDGtnYB5Z94K7kzXYVNCQ952k2IG98E48+zlwBhfjHqTsJ1XMBI9+UqG80OYQp03ruaSa53opfT7MkNTvcvW5dzzOEIkGucwJPVsbrWc1+iClvy360uo2VU+FdOs1G6xZP1Uf8whl6kbqu1Jzudas7wrOPe1zEi+UzB3JnE7phwz54zmn//2fzupbSf/IOP+nPJbbv9L9TWljWOfeBXM8m+O18Z7t77ttpRnfBXum3gVLMN7zC5rruUI=</data>
 	</layer>
@@ -18,17 +16,17 @@
 		<data encoding="base64" compression="zlib">eNpjYBgFo2BwAU8g9gJi7wGyPxCIg4A4eIDcHAnEUUAcTWM3UxOQ42ZKgdYApiUtIu2nVbxoDXC8aDGMgtFyGJEPtGiQJoZSmTYU6yxqpgNalv/0SAf4/EiPum0k1t+jbdXRdDMKBhYAAOVLGIs=</data>
 	</layer>
 	<objectgroup name="Calque d'objets 1" color="#ff0f13">
-		<object id="1" x="107" y="71" width="87" height="272" rotation="3.06134165e-038">
+		<object id="1" x="107" y="71" width="87" height="272">
 			<ellipse />
 		</object>
-		<object id="2" x="263" y="135" rotation="1.03696086e-043">
+		<object id="2" x="263" y="135">
 			<polygon points="0,0 108,137 -4,302 161,-49 -70,187" />
 		</object>
 		<object id="3" x="67" y="410.200012" width="41" height="38" rotation="35.2000008" />
 		<object id="4" x="163" y="398" width="153" height="59" />
 		<object id="5" x="577" y="166" width="2" />
-		<object id="6" x="439" y="234" width="16" height="16" gid="2" />
-		<object id="7" x="425" y="295" width="16" height="16" gid="2" />
+		<object id="6" gid="2" x="439" y="234" width="16" height="16" />
+		<object id="7" gid="2" x="425" y="295" width="16" height="16" />
 		<object id="8" x="289" y="51">
 			<polyline points="0,0 53,50 153,-5 165,72" />
 		</object>

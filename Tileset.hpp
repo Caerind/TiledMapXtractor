@@ -11,8 +11,10 @@ class Tileset : public detail::PropertiesHolder
     public:
         Tileset();
 
-        bool loadFromNode(pugi::xml_node& tileset);
-        bool saveToNode(pugi::xml_node& tileset);
+        bool loadFromNode(pugi::xml_node& tileset, bool fromTsx = false);
+        bool loadFromFile(std::string const& filename);
+        bool saveToNode(pugi::xml_node& tileset, bool fromTsx = false);
+        bool saveToFile(std::string const& filename);
 
         std::string getName() const;
         unsigned int getFirstGid() const;

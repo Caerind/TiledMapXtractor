@@ -88,7 +88,7 @@ bool Map::loadFromFile(std::string const& filename)
     }
     for (pugi::xml_node objectgroup = map.child("objectgroup"); objectgroup; objectgroup = objectgroup.next_sibling("objectgroup"))
     {
-        ObjectGroup* obj = new ObjectGroup(this);
+        ObjectGroup* obj = new ObjectGroup(*this);
         if (obj->loadFromNode(objectgroup))
         {
             if (std::find_if(mLayers.begin(),mLayers.end(),[&obj](detail::LayerBase* l)->bool{return (l->getName() == obj->getName());}) == mLayers.end())
