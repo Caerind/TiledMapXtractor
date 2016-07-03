@@ -13,7 +13,7 @@ Layer::Layer(Map* map)
     mCompression = "";
 }
 
-LayerType Layer::getType() const
+LayerType Layer::getLayerType() const
 {
     return tmx::ELayer;
 }

@@ -11,7 +11,6 @@
 #include <SFML/Graphics/RectangleShape.hpp>
 #include <SFML/Graphics/RenderStates.hpp>
 #include <SFML/Graphics/RenderTarget.hpp>
-#include <SFML/Graphics/Shape.hpp>
 #include <SFML/Graphics/Texture.hpp>
 
 #include "Compression.hpp"
@@ -46,15 +45,6 @@ std::string toString(T const& value)
     return oss.str();
 }
 
-template <typename T>
-T fromString(std::string const& string)
-{
-    T value;
-    std::istringstream iss(string);
-    iss >> value;
-    return value;
-}
-
 template <> inline std::string toString<std::string>(std::string const& value)
 {
     return value;
@@ -79,6 +69,15 @@ template <> inline std::string toString<sf::Color>(sf::Color const& value)
     return oss.str(); // TODO : Update with # when fully supported by Tiled
 }
 
+template <typename T>
+T fromString(std::string const& string)
+{
+    T value;
+    std::istringstream iss(string);
+    iss >> value;
+    return value;
+}
+
 template <> inline std::string fromString<std::string>(std::string const& string)
 {
     return string;
@@ -87,9 +86,13 @@ template <> inline std::string fromString<std::string>(std::string const& string
 template <> inline bool fromString<bool>(std::string const& string)
 {
     if (string == "true")
+    {
         return true;
+    }
     if (string == "false")
+    {
         return false;
+    }
     bool value;
     std::istringstream iss(string);
     iss >> value;
@@ -113,15 +116,15 @@ template <> inline sf::Vector2f fromString<sf::Vector2f>(std::string const& stri
 
 template <> inline sf::Color fromString<sf::Color>(std::string const& string)
 {
-    std::string c = string;
-    if (c != "")
+    std::string color = string;
+    if (color != "")
     {
-        if (c[0] == '#')
+        if (color[0] == '#')
         {
-            c.erase(c.begin());
+            color.erase(color.begin());
         }
         int hexTrans;
-        std::stringstream ss(c);
+        std::stringstream ss(color);
         ss >> std::hex >> hexTrans;
         if (hexTrans >= 0)
         {
@@ -140,7 +143,7 @@ class PropertiesHolder
     public:
         PropertiesHolder();
 
-        void loadProperties(pugi::xml_node& node);
+        void loadProperties(pugi::xml_node const& node);
         void saveProperties(pugi::xml_node& node);
 
         template <typename T>
@@ -156,7 +159,7 @@ class PropertiesHolder
 template <typename T>
 void PropertiesHolder::setProperty(std::string const& name, T const& value)
 {
-    mProperites[name] = toString(value);
+    mProperites[name] = toString<T>(value);
 }
 
 template <typename T>
@@ -178,12 +181,20 @@ class LayerBase : public PropertiesHolder, public sf::Drawable
 
         virtual void draw(sf::RenderTarget& target, sf::RenderStates states = sf::RenderStates()) const = 0;
 
-        virtual LayerType getType() const = 0;
+        virtual LayerType getLayerType() const = 0;
 
-        virtual bool loadFromNode(pugi::xml_node& layer);
+        virtual bool loadFromNode(pugi::xml_node const& layer);
         virtual void saveToNode(pugi::xml_node& layer);
 
-        std::string getName() const;
+        const std::string& getName() const;
+        const sf::Vector2f& getOffset() const;
+        float getOpacity() const;
+        bool isVisible() const;
+
+        virtual void setName(std::string const& name);
+        virtual void setOffset(sf::Vector2f const& offset);
+        virtual void setOpacity(float opacity);
+        virtual void setVisible(bool visible);
 
     protected:
         std::string mName;
@@ -197,18 +208,23 @@ class Image
     public:
         Image();
 
-        bool loadFromNode(pugi::xml_node& image);
+        bool loadFromNode(pugi::xml_node const& image);
         void saveToNode(pugi::xml_node& image);
 
-        std::string getFormat() const;
-        std::string getSource() const;
+        const std::string& getFormat() const;
+        const std::string& getSource() const;
         sf::Color getTransparent() const;
-        sf::Vector2u getSize() const;
+        const sf::Vector2u& getSize() const;
+
+        void setFormat(std::string const& format);
+        void setSource(std::string const& image);
+        void setTransparent(sf::Color const& color);
+        void setSize(sf::Vector2u const& size);
 
     protected:
         std::string mFormat;
         std::string mSource;
-        std::string mTrans;
+        std::string mTransparent;
         sf::Vector2u mSize;
 };
 

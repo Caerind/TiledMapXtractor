@@ -155,7 +155,7 @@ bool Map::saveToFile(std::string const& filename)
     for (std::size_t i = 0; i < mLayers.size(); i++)
     {
         pugi::xml_node layer;
-        LayerType type = mLayers[i]->getType();
+        LayerType type = mLayers[i]->getLayerType();
         switch (type)
         {
             case tmx::EImageLayer: layer = map.append_child("imagelayer"); break;

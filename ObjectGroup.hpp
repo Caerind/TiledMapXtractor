@@ -155,7 +155,7 @@ class ObjectGroup : public detail::LayerBase
     public:
         ObjectGroup(Map& map);
 
-        LayerType getType() const;
+        LayerType getLayerType() const;
 
         bool loadFromNode(pugi::xml_node& layer);
         void saveToNode(pugi::xml_node& layer);

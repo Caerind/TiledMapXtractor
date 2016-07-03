@@ -1,8 +1,7 @@
 <?xml version="1.0"?>
 <map version="1" orientation="orthogonal" renderorder="right-down" width="32" height="32" tilewidth="16" tileheight="16" nextobjectid="14">
 	<properties>
-		<property name="value" value="ee" />
-		<property name="name" value="test" />
+		<property name="test" value="ee" />
 	</properties>
 	<tileset firstgid="1" source="ortho.tsx" />
 	<layer name="Calque 1" width="32" height="32">
@@ -10,8 +9,9 @@
 	</layer>
 	<layer name="Calque 2" width="32" height="32">
 		<properties>
-			<property name="value" value="true" />
-			<property name="name" value="Truc" />
+			<property name="Truc" value="true" />
+			<property name="Coords" value="2,3" />
+			<property name="Coef" value="1.8" />
 		</properties>
 		<data encoding="base64" compression="zlib">eNpjYBgFo2BwAU8g9gJi7wGyPxCIg4A4eIDcHAnEUUAcTWM3UxOQ42ZKgdYApiUtIu2nVbxoDXC8aDGMgtFyGJEPtGiQJoZSmTYU6yxqpgNalv/0SAf4/EiPum0k1t+jbdXRdDMKBhYAAOVLGIs=</data>
 	</layer>

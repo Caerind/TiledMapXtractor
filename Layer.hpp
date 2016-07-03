@@ -15,7 +15,7 @@ class Layer : public detail::LayerBase
     public:
         Layer(Map* map);
 
-        LayerType getType() const;
+        LayerType getLayerType() const;
 
         bool loadFromNode(pugi::xml_node& layer);
         void saveToNode(pugi::xml_node& layer);

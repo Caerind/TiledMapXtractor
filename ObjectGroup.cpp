@@ -429,7 +429,7 @@ ObjectGroup::ObjectGroup(Map& map)
 {
 }
 
-LayerType ObjectGroup::getType() const
+LayerType ObjectGroup::getLayerType() const
 {
     return tmx::EObjectGroup;
 }
