@@ -1,20 +1,34 @@
 #include <SFML/Graphics.hpp>
 #include <iostream>
 #include "Map.hpp"
+#include "ImageLayer.hpp"
 
 int main()
 {
-    sf::RenderWindow window(sf::VideoMode(1024, 512), "SFML works!");
+    sf::RenderWindow window(sf::VideoMode(1024, 768), "SFML works!");
 
 	tmx::Map map;
-	map.loadFromFile("ortho.tmx");
-	map.saveToFile("temp.tmx");
+	map.loadFromFile("loaded.tmx");
+	map.saveToFile("saved.tmx");
 
 	tmx::Map map2;
-	map2.loadFromFile("temp.tmx");
+	map2.loadFromFile("saved.tmx");
 
-	sf::RenderStates states;
-	states.transform.translate(512,0);
+	tmx::Map map3;
+    tmx::ImageLayer::Ptr img = std::make_shared<tmx::ImageLayer>();
+    img->setName("CalquePerso");
+    img->setOffset({20.f, 20.f});
+    img->setSource("ortho.png");
+    img->loadImage();
+    map3.addLayer(img);
+	map3.saveToFile("created.tmx");
+
+
+	sf::RenderStates states2;
+	states2.transform.translate(512,0);
+
+	sf::RenderStates states3;
+	states3.transform.translate(256,256);
 
     while (window.isOpen())
     {
@@ -27,7 +41,8 @@ int main()
 
         window.clear();
         window.draw(map);
-        window.draw(map2,states);
+        window.draw(map2,states2);
+        window.draw(map3,states3);
         window.display();
     }
 

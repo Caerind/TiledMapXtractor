@@ -15,6 +15,8 @@ class Layer : public detail::LayerBase
     public:
         Layer(Map* map);
 
+        typedef std::shared_ptr<Layer> Ptr;
+
         LayerType getLayerType() const;
 
         bool loadFromNode(pugi::xml_node& layer);

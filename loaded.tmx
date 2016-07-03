@@ -3,7 +3,9 @@
  <properties>
   <property name="test" value="ee"/>
  </properties>
- <tileset firstgid="1" source="ortho.tsx"/>
+ <tileset firstgid="1" name="ortho" tilewidth="16" tileheight="16" tilecount="104" columns="8">
+  <image source="ortho.png" trans="ffffff" width="128" height="208"/>
+ </tileset>
  <layer name="Calque 1" width="32" height="32">
   <data encoding="base64" compression="zlib">
    eJy9l8sOwiAQRauJGk2aLnwt9BvcVVfqSu3/f5HXRBJCmAcwsDiLlmkZLneGduy67gpu4NKIBViCFbiDB3gy8aNxjj2YwABe4A0+TLwmxxT24ACOxPgUXHM5hrEzMGfGraD2ZA02leasuScSW7BT7omlno4TOBfOwXkhpmct78Sw0NPla90vtHvEaWmRl9bzlJba58MeIr2Xis/dY7+HaDxI9ZywZluTWrMp/ojpUlqvVr6V4qk8S32bGy/5JrU3xeK5Ggn10PpGW3c/apzLrc76UnLrIvacphZq9h3NOS35h9JDszbLc1qztpak1q1Gv0kYl4jVWK5+tfWVvOHG/Xv+v6BmjSE5tebP2f/vDZlrzvku9+eU/gVr4M/5BZrruUI=

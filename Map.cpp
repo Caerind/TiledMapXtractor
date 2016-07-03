@@ -75,10 +75,10 @@ bool Map::loadFromFile(std::string const& filename)
     }
     for (pugi::xml_node layer = map.child("layer"); layer; layer = layer.next_sibling("layer"))
     {
-        Layer* lyr = new Layer(this);
+        Layer::Ptr lyr = std::make_shared<Layer>(this);
         if (lyr->loadFromNode(layer))
         {
-            if (std::find_if(mLayers.begin(),mLayers.end(),[&lyr](detail::LayerBase* l)->bool{return (l->getName() == lyr->getName());}) == mLayers.end())
+            if (std::find_if(mLayers.begin(),mLayers.end(),[&lyr](detail::LayerBase::Ptr l)->bool{return (l->getName() == lyr->getName());}) == mLayers.end())
                 mLayers.push_back(lyr);
             else
                 std::cerr << "Layer already loaded" << std::endl;
@@ -88,10 +88,10 @@ bool Map::loadFromFile(std::string const& filename)
     }
     for (pugi::xml_node objectgroup = map.child("objectgroup"); objectgroup; objectgroup = objectgroup.next_sibling("objectgroup"))
     {
-        ObjectGroup* obj = new ObjectGroup(*this);
+        ObjectGroup::Ptr obj = std::make_shared<ObjectGroup>(*this);
         if (obj->loadFromNode(objectgroup))
         {
-            if (std::find_if(mLayers.begin(),mLayers.end(),[&obj](detail::LayerBase* l)->bool{return (l->getName() == obj->getName());}) == mLayers.end())
+            if (std::find_if(mLayers.begin(),mLayers.end(),[&obj](detail::LayerBase::Ptr l)->bool{return (l->getName() == obj->getName());}) == mLayers.end())
                 mLayers.push_back(obj);
             else
                 std::cerr << "ObjectGroup already loaded" << std::endl;
@@ -101,10 +101,10 @@ bool Map::loadFromFile(std::string const& filename)
     }
     for (pugi::xml_node imagelayer = map.child("imagelayer"); imagelayer; imagelayer = imagelayer.next_sibling("imagelayer"))
     {
-        ImageLayer* lyr = new ImageLayer();
+        ImageLayer::Ptr lyr = std::make_shared<ImageLayer>();
         if (lyr->loadFromNode(imagelayer))
         {
-            if (std::find_if(mLayers.begin(),mLayers.end(),[&lyr](detail::LayerBase* l)->bool{return (l->getName() == lyr->getName());}) == mLayers.end())
+            if (std::find_if(mLayers.begin(),mLayers.end(),[&lyr](detail::LayerBase::Ptr l)->bool{return (l->getName() == lyr->getName());}) == mLayers.end())
                 mLayers.push_back(lyr);
             else
                 std::cerr << "ImageLayer already loaded" << std::endl;
@@ -174,13 +174,28 @@ std::size_t Map::getLayerCount() const
     return mLayers.size();
 }
 
-detail::LayerBase& Map::getLayer(std::size_t index)
+detail::LayerBase::Ptr Map::getLayer(std::size_t index)
 {
-    if (index < 0 || index >= mLayers.size())
+    return mLayers[index];
+}
+
+LayerType Map::getLayerType(std::size_t index)
+{
+    return mLayers[index]->getLayerType();
+}
+
+void Map::addLayer(detail::LayerBase::Ptr layer)
+{
+    if (layer != nullptr)
     {
-        std::cerr << "Out of range : " << index << " / " << mLayers.size() << std::endl;
+        if (layer->getName() != "")
+        {
+            if (std::find_if(mLayers.begin(),mLayers.end(),[&layer](detail::LayerBase::Ptr l)->bool{return (l->getName() == layer->getName());}) == mLayers.end())
+            {
+                mLayers.push_back(layer);
+            }
+        }
     }
-    return *mLayers[index];
 }
 
 void Map::draw(sf::RenderTarget& target, sf::RenderStates states) const

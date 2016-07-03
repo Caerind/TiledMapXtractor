@@ -16,7 +16,11 @@ class Map : public detail::PropertiesHolder, public sf::Drawable
         bool saveToFile(std::string const& filename);
 
         std::size_t getLayerCount() const;
-        detail::LayerBase& getLayer(std::size_t index);
+        detail::LayerBase::Ptr getLayer(std::size_t index);
+        LayerType getLayerType(std::size_t index);
+        template <typename T>
+        std::shared_ptr<T> getLayer(std::size_t index);
+        void addLayer(detail::LayerBase::Ptr layer);
 
         void draw(sf::RenderTarget& target, sf::RenderStates states) const;
         void render(std::size_t index, sf::RenderTarget& target, sf::RenderStates states) const;
@@ -40,8 +44,14 @@ class Map : public detail::PropertiesHolder, public sf::Drawable
         unsigned int mNextObjectId;
 
         std::vector<Tileset> mTilesets;
-        std::vector<detail::LayerBase*> mLayers;
+        std::vector<detail::LayerBase::Ptr> mLayers;
 };
+
+template <typename T>
+std::shared_ptr<T> Map::getLayer(std::size_t index)
+{
+    return std::static_pointer_cast<T>(mLayers[index]);
+}
 
 } // namespace tmx
 

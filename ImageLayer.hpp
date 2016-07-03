@@ -13,6 +13,8 @@ class ImageLayer : public detail::LayerBase
     public:
         ImageLayer();
 
+        typedef std::shared_ptr<ImageLayer> Ptr;
+
         LayerType getLayerType() const;
 
         bool loadFromNode(pugi::xml_node const& layer);

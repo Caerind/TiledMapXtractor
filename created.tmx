@@ -1,0 +1,6 @@
+<?xml version="1.0"?>
+<map version="1" orientation="orthogonal" renderorder="right-down" width="0" height="0" tilewidth="0" tileheight="0" nextobjectid="1">
+	<imagelayer name="CalquePerso" offsetx="20" offsety="20">
+		<image source="ortho.png" />
+	</imagelayer>
+</map>

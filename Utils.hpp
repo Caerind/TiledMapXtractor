@@ -179,6 +179,8 @@ class LayerBase : public PropertiesHolder, public sf::Drawable
     public:
         LayerBase();
 
+        typedef std::shared_ptr<LayerBase> Ptr;
+
         virtual void draw(sf::RenderTarget& target, sf::RenderStates states = sf::RenderStates()) const = 0;
 
         virtual LayerType getLayerType() const = 0;

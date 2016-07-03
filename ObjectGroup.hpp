@@ -155,6 +155,8 @@ class ObjectGroup : public detail::LayerBase
     public:
         ObjectGroup(Map& map);
 
+        typedef std::shared_ptr<ObjectGroup> Ptr;
+
         LayerType getLayerType() const;
 
         bool loadFromNode(pugi::xml_node& layer);
