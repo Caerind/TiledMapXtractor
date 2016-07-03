@@ -1,7 +1,6 @@
 #include <SFML/Graphics.hpp>
 #include <iostream>
 #include "Map.hpp"
-#include "ImageLayer.hpp"
 
 int main()
 {
@@ -15,12 +14,10 @@ int main()
 	map2.loadFromFile("saved.tmx");
 
 	tmx::Map map3;
-    tmx::ImageLayer::Ptr img = std::make_shared<tmx::ImageLayer>();
-    img->setName("CalquePerso");
+    tmx::ImageLayer::Ptr img = map3.createLayer<tmx::ImageLayer>("CalquePerso");
     img->setOffset({20.f, 20.f});
     img->setSource("ortho.png");
     img->loadImage();
-    map3.addLayer(img);
 	map3.saveToFile("created.tmx");
 
 

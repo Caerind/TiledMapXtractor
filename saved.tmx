@@ -1,5 +1,5 @@
 <?xml version="1.0"?>
-<map version="1" orientation="orthogonal" renderorder="right-down" width="32" height="32" tilewidth="16" tileheight="16" nextobjectid="14">
+<map version="1" orientation="orthogonal" renderorder="right-down" width="32" height="32" tilewidth="16" tileheight="16" backgroundcolor="#808080" nextobjectid="14">
 	<properties>
 		<property name="test" value="ee" />
 	</properties>
@@ -26,11 +26,11 @@
 		</object>
 		<object id="3" x="67" y="410.200012" width="41" height="38" rotation="35.2000008" />
 		<object id="4" x="163" y="398" width="153" height="59" />
-		<object id="5" x="577" y="166" width="2" />
+		<object id="5" x="577" y="166" width="2" height="0" />
 		<object id="6" gid="2" x="439" y="234" width="16" height="16" />
 		<object id="7" gid="2" x="425" y="295" width="16" height="16" />
 		<object id="8" x="289" y="51">
-			<polyline points="0,0 53,50 153,-5 165,72" />
+			<polyline points="0,0 53,50 153,-5 165,72 " />
 		</object>
 		<object id="11" x="442" y="279">
 			<polygon points="0,0 -90,100 -25,168 41,103 47,29" />

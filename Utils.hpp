@@ -11,13 +11,17 @@
 #include <SFML/Graphics/RectangleShape.hpp>
 #include <SFML/Graphics/RenderStates.hpp>
 #include <SFML/Graphics/RenderTarget.hpp>
+#include <SFML/Graphics/Sprite.hpp>
 #include <SFML/Graphics/Texture.hpp>
+#include <SFML/Graphics/VertexArray.hpp>
 
 #include "Compression.hpp"
 #include "pugixml.hpp"
 
 namespace tmx
 {
+
+class Map;
 
 enum LayerType
 {
@@ -174,7 +178,34 @@ T PropertiesHolder::getProperty(std::string const& name)
     return value;
 }
 
-class LayerBase : public PropertiesHolder, public sf::Drawable
+class Image
+{
+    public:
+        Image();
+
+        bool loadFromNode(pugi::xml_node const& image);
+        void saveToNode(pugi::xml_node& image);
+
+        const std::string& getFormat() const;
+        const std::string& getSource() const;
+        sf::Color getTransparent() const;
+        const sf::Vector2u& getSize() const;
+
+        void setFormat(std::string const& format);
+        void setSource(std::string const& image);
+        void setTransparent(sf::Color const& color);
+        void setSize(sf::Vector2u const& size);
+
+    protected:
+        std::string mFormat;
+        std::string mSource;
+        std::string mTransparent;
+        sf::Vector2u mSize;
+};
+
+} // namespace detail
+
+class LayerBase : public detail::PropertiesHolder, public sf::Drawable
 {
     public:
         LayerBase();
@@ -205,32 +236,38 @@ class LayerBase : public PropertiesHolder, public sf::Drawable
         bool mVisible;
 };
 
-class Image
+class ImageLayer : public LayerBase
 {
     public:
-        Image();
+        ImageLayer(Map& map);
 
-        bool loadFromNode(pugi::xml_node const& image);
-        void saveToNode(pugi::xml_node& image);
+        typedef std::shared_ptr<ImageLayer> Ptr;
 
-        const std::string& getFormat() const;
+        LayerType getLayerType() const;
+
+        bool loadFromNode(pugi::xml_node const& layer);
+        void saveToNode(pugi::xml_node& layer);
+
         const std::string& getSource() const;
+        const std::string& getFormat() const;
         sf::Color getTransparent() const;
         const sf::Vector2u& getSize() const;
 
+        void setSource(std::string const& source);
         void setFormat(std::string const& format);
-        void setSource(std::string const& image);
-        void setTransparent(sf::Color const& color);
+        void setTransparent(sf::Color const& transparent);
         void setSize(sf::Vector2u const& size);
 
-    protected:
-        std::string mFormat;
-        std::string mSource;
-        std::string mTransparent;
-        sf::Vector2u mSize;
-};
+        bool loadImage();
 
-} // namespace detail
+        void draw(sf::RenderTarget& target, sf::RenderStates states = sf::RenderStates()) const;
+
+    protected:
+        Map& mMap;
+        detail::Image mImage;
+        sf::Texture mTexture;
+        sf::Vertex mVertices[6];
+};
 
 } // namespace tmx
 

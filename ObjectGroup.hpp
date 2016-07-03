@@ -3,154 +3,13 @@
 
 #include "Map.hpp"
 #include "Utils.hpp"
+#include "ObjectBase.h"
 
 namespace tmx
 {
 
 class Map;
-
-namespace detail
-{
-
-// TODO : Modification on objects should notify the group to update
-class ObjectBase : public PropertiesHolder, public sf::Drawable
-{
-    public:
-        ObjectBase();
-
-        typedef std::shared_ptr<ObjectBase> Ptr;
-
-        virtual ObjectType getObjectType() const = 0;
-
-        virtual void loadFromNode(pugi::xml_node& object);
-        virtual void saveToNode(pugi::xml_node& object);
-
-        virtual void setColor(sf::Color const& color) = 0;
-
-        virtual unsigned int getId() const;
-        virtual unsigned int getGid() const;
-        virtual std::string getName() const;
-        virtual std::string getType() const;
-        virtual sf::Vector2f getPosition() const;
-        virtual sf::Vector2f getSize() const;
-        virtual float getRotation() const;
-        virtual bool isVisible() const;
-
-        virtual void setId(unsigned int id);
-        virtual void setGid(unsigned int gid);
-        virtual void setName(std::string const& name);
-        virtual void setType(std::string const& type);
-        virtual void setPosition(sf::Vector2f const& position);
-        virtual void setSize(sf::Vector2f const& size);
-        virtual void setRotation(float rotation);
-        virtual void setVisible(bool visible);
-
-        virtual void draw(sf::RenderTarget& target, sf::RenderStates states = sf::RenderStates()) const = 0;
-
-    protected:
-        virtual void update();
-
-    protected:
-        unsigned int mId;
-        unsigned int mGid;
-        std::string mName;
-        std::string mType;
-        sf::Vector2f mPosition;
-        sf::Vector2f mSize;
-        float mRotation;
-        bool mVisible;
-};
-
-} // namespace detail
-
-class Object : public detail::ObjectBase
-{
-    public:
-        Object(Map& map);
-
-        typedef std::shared_ptr<Object> Ptr;
-
-        ObjectType getObjectType() const;
-
-        void update();
-
-        void setColor(sf::Color const& color);
-
-        void draw(sf::RenderTarget& target, sf::RenderStates states = sf::RenderStates()) const;
-
-    private:
-        Map& mMap;
-        sf::RectangleShape mShape;
-};
-
-class Ellipse : public detail::ObjectBase
-{
-    public:
-        Ellipse();
-
-        typedef std::shared_ptr<Ellipse> Ptr;
-
-        ObjectType getObjectType() const;
-
-        void update();
-
-        void saveToNode(pugi::xml_node& object);
-
-        void setColor(sf::Color const& color);
-
-        void draw(sf::RenderTarget& target, sf::RenderStates states = sf::RenderStates()) const;
-
-    private:
-        sf::ConvexShape mShape;
-};
-
-class Polygon : public detail::ObjectBase
-{
-    public:
-        Polygon();
-
-        // TODO : Add/Remove/Modify Points
-
-        typedef std::shared_ptr<Polygon> Ptr;
-
-        ObjectType getObjectType() const;
-
-        void loadFromNode(pugi::xml_node& object);
-        void saveToNode(pugi::xml_node& object);
-        void update();
-
-        void setColor(sf::Color const& color);
-
-        void draw(sf::RenderTarget& target, sf::RenderStates states = sf::RenderStates()) const;
-
-    private:
-        sf::ConvexShape mShape;
-};
-
-class Polyline : public detail::ObjectBase
-{
-    public:
-        Polyline();
-
-        // TODO : Add/Remove/Modify Points
-
-        typedef std::shared_ptr<Polyline> Ptr;
-
-        ObjectType getObjectType() const;
-
-        void loadFromNode(pugi::xml_node& object);
-        void saveToNode(pugi::xml_node& object);
-        void update();
-
-        void setColor(sf::Color const& color);
-
-        void draw(sf::RenderTarget& target, sf::RenderStates states = sf::RenderStates()) const;
-
-    private:
-        std::vector<sf::RectangleShape> mShapes;
-};
-
-class ObjectGroup : public detail::LayerBase
+class ObjectGroup : public LayerBase
 {
     public:
         ObjectGroup(Map& map);
@@ -159,7 +18,7 @@ class ObjectGroup : public detail::LayerBase
 
         LayerType getLayerType() const;
 
-        bool loadFromNode(pugi::xml_node& layer);
+        bool loadFromNode(pugi::xml_node const& layer);
         void saveToNode(pugi::xml_node& layer);
 
         void draw(sf::RenderTarget& target, sf::RenderStates states = sf::RenderStates()) const;
@@ -167,21 +26,52 @@ class ObjectGroup : public detail::LayerBase
         sf::Color getColor() const;
         void setColor(sf::Color const& color);
 
-        std::string getDrawOrder() const;
+        const std::string& getDrawOrder() const;
         void setDrawOrder(std::string const& order);
 
         void sort(std::string const& order = "topdown");
 
         std::size_t getObjectCount() const;
-        detail::ObjectBase::Ptr getObject(std::size_t index);
-        void addObject(detail::ObjectBase::Ptr object);
+        ObjectBase::Ptr getObject(std::size_t index);
+        ObjectType getObjectType(std::size_t index);
+        template <typename T>
+        std::shared_ptr<T> getObject(std::size_t index);
+        template <typename T>
+        std::shared_ptr<T> createObject(unsigned int id);
+        void removeObject(unsigned int id);
+
+        Map& getMap();
 
     protected:
         Map& mMap;
         std::string mColor;
         std::string mDrawOrder;
-        std::vector<detail::ObjectBase::Ptr> mObjects;
+        std::vector<ObjectBase::Ptr> mObjects;
 };
+
+template <typename T>
+std::shared_ptr<T> ObjectGroup::getObject(std::size_t index)
+{
+    return std::static_pointer_cast<T>(mObjects[index]);
+}
+
+template <typename T>
+std::shared_ptr<T> ObjectGroup::createObject(unsigned int id)
+{
+    if (id != 0)
+    {
+        if (std::find_if(mObjects.begin(),mObjects.end(),[&id](ObjectBase::Ptr obj) -> bool { return (obj->getId() >= id);}) == mObjects.end())
+        {
+            std::shared_ptr<T> p = std::make_shared<T>(*this);
+            p->setId(id);
+            p->setColor(getColor());
+            mObjects.push_back(p);
+            sort(mDrawOrder);
+            return p;
+        }
+    }
+    return nullptr;
+}
 
 } // namespace tmx
 

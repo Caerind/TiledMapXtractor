@@ -16,7 +16,7 @@ Tileset::Tileset()
     mTileOffset = {0.f, 0.f};
 }
 
-bool Tileset::loadFromNode(pugi::xml_node& tileset, bool fromTsx)
+bool Tileset::loadFromNode(pugi::xml_node const& tileset, bool fromTsx)
 {
     if (!tileset)
     {

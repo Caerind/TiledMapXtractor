@@ -1,5 +1,4 @@
 #include "Map.hpp"
-#include "ImageLayer.hpp"
 #include "Layer.hpp"
 #include "ObjectGroup.hpp"
 
@@ -7,17 +6,17 @@ namespace tmx
 {
 
 Map::Map()
+: mVersion(1.0f)
+, mOrientation("orthogonal")
+, mRenderOrder("right-down")
+, mMapSize({0, 0})
+, mTileSize({0, 0})
+, mHexSideLength(0)
+, mStaggerAxis("")
+, mStaggerIndex("")
+, mBackgroundColor("#808080")
+, mNextObjectId(1)
 {
-    mVersion = 1.0f;
-    mOrientation = "orthogonal";
-    mRenderOrder = "right-down";
-    mMapSize = {0, 0};
-    mTileSize = {0, 0};
-    mHexSideLength = 0;
-    mStaggerAxis = "";
-    mStaggerIndex = "";
-    mBackgroundColor = "";
-    mNextObjectId = 1;
 }
 
 bool Map::loadFromFile(std::string const& filename)
@@ -75,10 +74,10 @@ bool Map::loadFromFile(std::string const& filename)
     }
     for (pugi::xml_node layer = map.child("layer"); layer; layer = layer.next_sibling("layer"))
     {
-        Layer::Ptr lyr = std::make_shared<Layer>(this);
+        Layer::Ptr lyr = std::make_shared<Layer>(*this);
         if (lyr->loadFromNode(layer))
         {
-            if (std::find_if(mLayers.begin(),mLayers.end(),[&lyr](detail::LayerBase::Ptr l)->bool{return (l->getName() == lyr->getName());}) == mLayers.end())
+            if (std::find_if(mLayers.begin(),mLayers.end(),[&lyr](LayerBase::Ptr l)->bool{return (l->getName() == lyr->getName());}) == mLayers.end())
                 mLayers.push_back(lyr);
             else
                 std::cerr << "Layer already loaded" << std::endl;
@@ -91,7 +90,7 @@ bool Map::loadFromFile(std::string const& filename)
         ObjectGroup::Ptr obj = std::make_shared<ObjectGroup>(*this);
         if (obj->loadFromNode(objectgroup))
         {
-            if (std::find_if(mLayers.begin(),mLayers.end(),[&obj](detail::LayerBase::Ptr l)->bool{return (l->getName() == obj->getName());}) == mLayers.end())
+            if (std::find_if(mLayers.begin(),mLayers.end(),[&obj](LayerBase::Ptr l)->bool{return (l->getName() == obj->getName());}) == mLayers.end())
                 mLayers.push_back(obj);
             else
                 std::cerr << "ObjectGroup already loaded" << std::endl;
@@ -101,10 +100,10 @@ bool Map::loadFromFile(std::string const& filename)
     }
     for (pugi::xml_node imagelayer = map.child("imagelayer"); imagelayer; imagelayer = imagelayer.next_sibling("imagelayer"))
     {
-        ImageLayer::Ptr lyr = std::make_shared<ImageLayer>();
+        ImageLayer::Ptr lyr = std::make_shared<ImageLayer>(*this);
         if (lyr->loadFromNode(imagelayer))
         {
-            if (std::find_if(mLayers.begin(),mLayers.end(),[&lyr](detail::LayerBase::Ptr l)->bool{return (l->getName() == lyr->getName());}) == mLayers.end())
+            if (std::find_if(mLayers.begin(),mLayers.end(),[&lyr](LayerBase::Ptr l)->bool{return (l->getName() == lyr->getName());}) == mLayers.end())
                 mLayers.push_back(lyr);
             else
                 std::cerr << "ImageLayer already loaded" << std::endl;
@@ -174,7 +173,7 @@ std::size_t Map::getLayerCount() const
     return mLayers.size();
 }
 
-detail::LayerBase::Ptr Map::getLayer(std::size_t index)
+LayerBase::Ptr Map::getLayer(std::size_t index)
 {
     return mLayers[index];
 }
@@ -184,18 +183,19 @@ LayerType Map::getLayerType(std::size_t index)
     return mLayers[index]->getLayerType();
 }
 
-void Map::addLayer(detail::LayerBase::Ptr layer)
+void Map::removeLayer(std::string const& name)
 {
-    if (layer != nullptr)
-    {
-        if (layer->getName() != "")
-        {
-            if (std::find_if(mLayers.begin(),mLayers.end(),[&layer](detail::LayerBase::Ptr l)->bool{return (l->getName() == layer->getName());}) == mLayers.end())
-            {
-                mLayers.push_back(layer);
-            }
-        }
-    }
+    mLayers.erase(std::remove_if(mLayers.begin(),mLayers.end(),[&name](LayerBase::Ptr l)->bool{return l->getName() == name;}),mLayers.end());
+}
+
+void Map::renderBackground(sf::RenderTarget& target)
+{
+    sf::View v = target.getView();
+    sf::RectangleShape shape(v.getSize());
+    shape.setFillColor(detail::fromString<sf::Color>(mBackgroundColor));
+    target.setView(target.getDefaultView());
+    target.draw(shape);
+    target.setView(v);
 }
 
 void Map::draw(sf::RenderTarget& target, sf::RenderStates states) const

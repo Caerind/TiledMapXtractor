@@ -16,12 +16,15 @@ class Map : public detail::PropertiesHolder, public sf::Drawable
         bool saveToFile(std::string const& filename);
 
         std::size_t getLayerCount() const;
-        detail::LayerBase::Ptr getLayer(std::size_t index);
+        LayerBase::Ptr getLayer(std::size_t index);
         LayerType getLayerType(std::size_t index);
         template <typename T>
         std::shared_ptr<T> getLayer(std::size_t index);
-        void addLayer(detail::LayerBase::Ptr layer);
+        template <typename T>
+        std::shared_ptr<T> createLayer(std::string const& name);
+        void removeLayer(std::string const& name);
 
+        void renderBackground(sf::RenderTarget& target);
         void draw(sf::RenderTarget& target, sf::RenderStates states) const;
         void render(std::size_t index, sf::RenderTarget& target, sf::RenderStates states) const;
 
@@ -44,13 +47,29 @@ class Map : public detail::PropertiesHolder, public sf::Drawable
         unsigned int mNextObjectId;
 
         std::vector<Tileset> mTilesets;
-        std::vector<detail::LayerBase::Ptr> mLayers;
+        std::vector<LayerBase::Ptr> mLayers;
 };
 
 template <typename T>
 std::shared_ptr<T> Map::getLayer(std::size_t index)
 {
     return std::static_pointer_cast<T>(mLayers[index]);
+}
+
+template <typename T>
+std::shared_ptr<T> Map::createLayer(std::string const& name)
+{
+    if (name != "")
+    {
+        if (std::find_if(mLayers.begin(),mLayers.end(),[&name](LayerBase::Ptr l)->bool{return (l->getName() == name);}) == mLayers.end())
+        {
+            std::shared_ptr<T> p = std::make_shared<T>(*this);
+            p->setName(name);
+            mLayers.push_back(p);
+            return p;
+        }
+    }
+    return nullptr;
 }
 
 } // namespace tmx

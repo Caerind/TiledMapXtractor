@@ -11,7 +11,7 @@ class Tileset : public detail::PropertiesHolder
     public:
         Tileset();
 
-        bool loadFromNode(pugi::xml_node& tileset, bool fromTsx = false);
+        bool loadFromNode(pugi::xml_node const& tileset, bool fromTsx = false);
         bool loadFromFile(std::string const& filename);
         bool saveToNode(pugi::xml_node& tileset, bool fromTsx = false);
         bool saveToFile(std::string const& filename);
@@ -62,7 +62,7 @@ class Tileset : public detail::PropertiesHolder
                         struct Frame
                         {
                             unsigned int tileId;
-                            float duration; // TODO : Is float ?
+                            float duration;
                         };
 
                         Frame& getFrame(std::size_t index);

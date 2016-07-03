@@ -55,113 +55,6 @@ void PropertiesHolder::saveProperties(pugi::xml_node& node)
     }
 }
 
-LayerBase::LayerBase()
-: mName("")
-, mOffset({0.f, 0.f})
-, mOpacity(1.f)
-, mVisible(true)
-{
-}
-
-bool LayerBase::loadFromNode(pugi::xml_node const& layer)
-{
-    if (!layer)
-    {
-        return false;
-    }
-    for (pugi::xml_attribute attr = layer.first_attribute(); attr; attr = attr.next_attribute())
-    {
-        if (attr.name() == std::string("name"))
-        {
-            mName = attr.as_string();
-        }
-        if (attr.name() == std::string("offsetx"))
-        {
-            mOffset.x = attr.as_float();
-        }
-        if (attr.name() == std::string("offsety"))
-        {
-            mOffset.y = attr.as_float();
-        }
-        if (attr.name() == std::string("opacity"))
-        {
-            mOpacity = attr.as_float();
-        }
-        if (attr.name() == std::string("visible"))
-        {
-            mVisible = fromString<bool>(attr.as_string());
-        }
-    }
-    loadProperties(layer);
-    return true;
-}
-
-void LayerBase::saveToNode(pugi::xml_node& layer)
-{
-    if (!layer)
-    {
-        return;
-    }
-    if (mName != "")
-    {
-        layer.append_attribute("name") = mName.c_str();
-    }
-    if (mOffset != sf::Vector2f())
-    {
-        layer.append_attribute("offsetx") = mOffset.x;
-        layer.append_attribute("offsety") = mOffset.y;
-    }
-    if (mOpacity != 1.f)
-    {
-        layer.append_attribute("opacity") = mOpacity;
-    }
-    if (!mVisible)
-    {
-        layer.append_attribute("visible") = "false";
-    }
-    saveProperties(layer);
-}
-
-const std::string& LayerBase::getName() const
-{
-    return mName;
-}
-
-const sf::Vector2f& LayerBase::getOffset() const
-{
-    return mOffset;
-}
-
-float LayerBase::getOpacity() const
-{
-    return mOpacity;
-}
-
-bool LayerBase::isVisible() const
-{
-    return mVisible;
-}
-
-void LayerBase::setName(std::string const& name)
-{
-    mName = name;
-}
-
-void LayerBase::setOffset(sf::Vector2f const& offset)
-{
-    mOffset = offset;
-}
-
-void LayerBase::setOpacity(float opacity)
-{
-    mOpacity = opacity;
-}
-
-void LayerBase::setVisible(bool visible)
-{
-    mVisible = visible;
-}
-
 Image::Image()
 : mFormat("")
 , mSource("")
@@ -270,5 +163,231 @@ void Image::setSize(sf::Vector2u const& size)
 }
 
 } // namespace detail
+
+LayerBase::LayerBase()
+: mName("")
+, mOffset({0.f, 0.f})
+, mOpacity(1.f)
+, mVisible(true)
+{
+}
+
+bool LayerBase::loadFromNode(pugi::xml_node const& layer)
+{
+    if (!layer)
+    {
+        return false;
+    }
+    for (pugi::xml_attribute attr = layer.first_attribute(); attr; attr = attr.next_attribute())
+    {
+        if (attr.name() == std::string("name"))
+        {
+            mName = attr.as_string();
+        }
+        if (attr.name() == std::string("offsetx"))
+        {
+            mOffset.x = attr.as_float();
+        }
+        if (attr.name() == std::string("offsety"))
+        {
+            mOffset.y = attr.as_float();
+        }
+        if (attr.name() == std::string("opacity"))
+        {
+            mOpacity = attr.as_float();
+        }
+        if (attr.name() == std::string("visible"))
+        {
+            mVisible = detail::fromString<bool>(attr.as_string());
+        }
+    }
+    loadProperties(layer);
+    return true;
+}
+
+void LayerBase::saveToNode(pugi::xml_node& layer)
+{
+    if (!layer)
+    {
+        return;
+    }
+    if (mName != "")
+    {
+        layer.append_attribute("name") = mName.c_str();
+    }
+    if (mOffset != sf::Vector2f())
+    {
+        layer.append_attribute("offsetx") = mOffset.x;
+        layer.append_attribute("offsety") = mOffset.y;
+    }
+    if (mOpacity != 1.f)
+    {
+        layer.append_attribute("opacity") = mOpacity;
+    }
+    if (!mVisible)
+    {
+        layer.append_attribute("visible") = "false";
+    }
+    saveProperties(layer);
+}
+
+const std::string& LayerBase::getName() const
+{
+    return mName;
+}
+
+const sf::Vector2f& LayerBase::getOffset() const
+{
+    return mOffset;
+}
+
+float LayerBase::getOpacity() const
+{
+    return mOpacity;
+}
+
+bool LayerBase::isVisible() const
+{
+    return mVisible;
+}
+
+void LayerBase::setName(std::string const& name)
+{
+    mName = name;
+}
+
+void LayerBase::setOffset(sf::Vector2f const& offset)
+{
+    mOffset = offset;
+}
+
+void LayerBase::setOpacity(float opacity)
+{
+    mOpacity = opacity;
+}
+
+void LayerBase::setVisible(bool visible)
+{
+    mVisible = visible;
+}
+
+ImageLayer::ImageLayer(Map& map)
+: mMap(map)
+{
+}
+
+LayerType ImageLayer::getLayerType() const
+{
+    return tmx::EImageLayer;
+}
+
+bool ImageLayer::loadFromNode(pugi::xml_node const& layer)
+{
+    if (!layer)
+    {
+        return false;
+    }
+    if (!LayerBase::loadFromNode(layer))
+    {
+        return false;
+    }
+    pugi::xml_node image = layer.child("image");
+    if (!mImage.loadFromNode(image))
+    {
+        return false;
+    }
+    return loadImage();
+}
+
+void ImageLayer::saveToNode(pugi::xml_node& layer)
+{
+    if (!layer)
+    {
+        return;
+    }
+    LayerBase::saveToNode(layer);
+    pugi::xml_node image = layer.append_child("image");
+    if (!image)
+    {
+        return;
+    }
+    mImage.saveToNode(image);
+}
+
+const std::string& ImageLayer::getSource() const
+{
+    return mImage.getSource();
+}
+
+const std::string& ImageLayer::getFormat() const
+{
+    return mImage.getFormat();
+}
+
+sf::Color ImageLayer::getTransparent() const
+{
+    return mImage.getTransparent();
+}
+
+const sf::Vector2u& ImageLayer::getSize() const
+{
+    return mImage.getSize();
+}
+
+void ImageLayer::setSource(std::string const& source)
+{
+    mImage.setSource(source);
+}
+
+void ImageLayer::setFormat(std::string const& format)
+{
+    mImage.setFormat(format);
+}
+
+void ImageLayer::setTransparent(sf::Color const& transparent)
+{
+    mImage.setTransparent(transparent);
+}
+
+void ImageLayer::setSize(sf::Vector2u const& size)
+{
+    mImage.setSize(size);
+}
+
+bool ImageLayer::loadImage()
+{
+    if (mImage.getSource() == "")
+    {
+        return false;
+    }
+    sf::Image img;
+    if (!img.loadFromFile(mImage.getSource()))
+    {
+        return false;
+    }
+    if (!mTexture.loadFromImage(img))
+    {
+        return false;
+    }
+    sf::Vector2f textureSize = static_cast<sf::Vector2f>(mTexture.getSize());
+    sf::Color color = sf::Color(255,255,255,static_cast<unsigned char>(255.f * mOpacity));
+    mVertices[0] = sf::Vertex(sf::Vector2f(0.f, 0.f), color, sf::Vector2f(0.f, 0.f));
+    mVertices[1] = sf::Vertex(sf::Vector2f(textureSize.x, 0.f), color, sf::Vector2f(textureSize.x, 0.f));
+    mVertices[2] = sf::Vertex(textureSize, color, textureSize);
+    mVertices[3] = mVertices[2];
+    mVertices[4] = sf::Vertex(sf::Vector2f(0.f, textureSize.y), color, sf::Vector2f(0.f, textureSize.y));
+    mVertices[5] = mVertices[0];
+    return true;
+}
+
+void ImageLayer::draw(sf::RenderTarget& target, sf::RenderStates states) const
+{
+    if (mVisible)
+    {
+        states.transform.translate(mOffset);
+        states.texture = &mTexture;
+        target.draw(mVertices, 6, sf::Triangles, states);
+    }
+}
 
 } // namespace tmx

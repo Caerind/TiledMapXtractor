@@ -20,6 +20,7 @@ As the library is pretty new, (3 days only), most features will be added soon
 - Tileset:Tile:Image
 - Map:Orientation
 - Map:RenderOrder
-- Map:BackgroundColor
-- Object:Concave Polygon
 - Image:Data
+- Compression/Encoding mode (only base64 and zlib at the moment)
+- Object:Concave Polygon
+- Object:TileFlipping

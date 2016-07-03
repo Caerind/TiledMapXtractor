@@ -1,25 +1,24 @@
 #ifndef TMX_TILELAYER_HPP
 #define TMX_TILELAYER_HPP
 
-#include <SFML/Graphics/VertexArray.hpp>
-
-#include "Map.hpp"
-#include "Tileset.hpp"
 #include "Utils.hpp"
 
 namespace tmx
 {
 
-class Layer : public detail::LayerBase
+class Map;
+class Tileset;
+
+class Layer : public LayerBase
 {
     public:
-        Layer(Map* map);
+        Layer(Map& map);
 
         typedef std::shared_ptr<Layer> Ptr;
 
         LayerType getLayerType() const;
 
-        bool loadFromNode(pugi::xml_node& layer);
+        bool loadFromNode(pugi::xml_node const& layer);
         void saveToNode(pugi::xml_node& layer);
 
         void setTileId(sf::Vector2u coords, unsigned int id);
@@ -34,7 +33,7 @@ class Layer : public detail::LayerBase
         void update();
 
     protected:
-        Map* mMap;
+        Map& mMap;
         Tileset* mTileset;
         sf::VertexArray mVertices;
 
