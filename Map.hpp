@@ -1,19 +1,14 @@
-#ifndef MAP_HPP
-#define MAP_HPP
+#ifndef TMX_MAP_HPP
+#define TMX_MAP_HPP
 
-#include <iostream>
-#include <vector>
-
-#include <SFML/Graphics/RenderStates.hpp>
-#include <SFML/Graphics/RenderTarget.hpp>
-
-#include "pugixml.hpp"
-
-#include "Layer.hpp"
-#include "Properties.hpp"
+#include "ImageLayer.hpp"
 #include "Tileset.hpp"
+#include "Utils.hpp"
 
-class Map
+namespace tmx
+{
+
+class Map : public detail::PropertiesHolder, public sf::Drawable
 {
     public:
         Map();
@@ -21,18 +16,16 @@ class Map
         bool loadFromFile(std::string const& filename);
         bool saveToFile(std::string const& filename);
 
-        void loadTileset(pugi::xml_node& tilesetNode);
-        void loadLayer(pugi::xml_node& layerNode);
-
         std::size_t getLayerCount() const;
-        Layer& getLayer(std::size_t index);
+        detail::LayerBase& getLayer(std::size_t index);
 
-        void render(sf::RenderTarget& target, sf::RenderStates states = sf::RenderStates());
-        void render(std::size_t index, sf::RenderTarget& target, sf::RenderStates states = sf::RenderStates());
+        void draw(sf::RenderTarget& target, sf::RenderStates states) const;
+        void render(std::size_t index, sf::RenderTarget& target, sf::RenderStates states) const;
 
         Tileset* getTileset(unsigned int id);
 
         std::string getOrientation() const;
+        sf::Vector2u getMapSize() const;
         sf::Vector2u getTileSize() const;
 
     private:
@@ -47,10 +40,10 @@ class Map
         std::string mBackgroundColor;
         unsigned int mNextObjectId;
 
-        std::vector<Layer> mLayers;
         std::vector<Tileset> mTilesets;
-
-        Properties mProperties;
+        std::vector<detail::LayerBase*> mLayers;
 };
 
-#endif // MAP_HPP
+} // namespace tmx
+
+#endif // TMX_MAP_HPP

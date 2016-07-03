@@ -4,12 +4,17 @@
 
 int main()
 {
-    sf::RenderWindow window(sf::VideoMode(512, 512), "SFML works!");
+    sf::RenderWindow window(sf::VideoMode(1024, 512), "SFML works!");
 
-	Map map;
+	tmx::Map map;
 	map.loadFromFile("ortho.tmx");
 	map.saveToFile("temp.tmx");
-	map.loadFromFile("temp.tmx");
+
+	tmx::Map map2;
+	map2.loadFromFile("temp.tmx");
+
+	sf::RenderStates states;
+	states.transform.translate(512,0);
 
     while (window.isOpen())
     {
@@ -21,7 +26,8 @@ int main()
         }
 
         window.clear();
-        map.render(window);
+        window.draw(map);
+        window.draw(map2,states);
         window.display();
     }
 

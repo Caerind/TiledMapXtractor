@@ -1,4 +1,8 @@
 #include "Map.hpp"
+#include "Layer.hpp"
+
+namespace tmx
+{
 
 Map::Map()
 {
@@ -21,12 +25,14 @@ bool Map::loadFromFile(std::string const& filename)
         std::cerr << "Uncorrect filename" << std::endl;
         return false;
     }
+
     pugi::xml_document doc;
     if (!doc.load_file(filename.c_str()))
     {
         std::cerr << "The document (" << filename << ") cannot be loaded" << std::endl;
         return false;
     }
+
     pugi::xml_node map = doc.child("map");
     if (!map)
     {
@@ -50,21 +56,51 @@ bool Map::loadFromFile(std::string const& filename)
         if (attr.name() == std::string("nextobjectid")) mNextObjectId = attr.as_uint();
     }
 
-    pugi::xml_node properties = map.child("properties");
-    if (properties)
-        mProperties.loadFromNode(properties);
+    loadProperties(map);
 
     for (pugi::xml_node tileset = map.child("tileset"); tileset; tileset = tileset.next_sibling("tileset"))
     {
-        loadTileset(tileset);
+        Tileset tset;
+        if (tset.loadFromNode(tileset))
+        {
+            if (std::find_if(mTilesets.begin(),mTilesets.end(),[&tset](Tileset const& t)->bool{return (t.getName() == tset.getName());}) == mTilesets.end())
+                mTilesets.push_back(tset);
+            else
+                std::cerr << "Tileset already loaded" << std::endl;
+        }
+        else
+            std::cerr << "Tileset has not been loaded" << std::endl;
     }
-
     for (pugi::xml_node layer = map.child("layer"); layer; layer = layer.next_sibling("layer"))
     {
-        loadLayer(layer);
+        Layer* lyr = new Layer(this);
+        if (lyr->loadFromNode(layer))
+        {
+            if (std::find_if(mLayers.begin(),mLayers.end(),[&lyr](detail::LayerBase* l)->bool{return (l->getName() == lyr->getName());}) == mLayers.end())
+                mLayers.push_back(lyr);
+            else
+                std::cerr << "Layer already loaded" << std::endl;
+        }
+        else
+            std::cerr << "Layer has not been loaded" << std::endl;
     }
-
-    // TODO : Handle the rest of TMX files
+    for (pugi::xml_node objectgroup = map.child("objectgroup"); objectgroup; objectgroup = objectgroup.next_sibling("objectgroup"))
+    {
+        //loadObjectGroup(objectgroup);
+    }
+    for (pugi::xml_node imagelayer = map.child("imagelayer"); imagelayer; imagelayer = imagelayer.next_sibling("imagelayer"))
+    {
+        ImageLayer* lyr = new ImageLayer();
+        if (lyr->loadFromNode(imagelayer))
+        {
+            if (std::find_if(mLayers.begin(),mLayers.end(),[&lyr](detail::LayerBase* l)->bool{return (l->getName() == lyr->getName());}) == mLayers.end())
+                mLayers.push_back(lyr);
+            else
+                std::cerr << "ImageLayer already loaded" << std::endl;
+        }
+        else
+            std::cerr << "ImageLayer has not been loaded" << std::endl;
+    }
 
     return true;
 }
@@ -96,8 +132,7 @@ bool Map::saveToFile(std::string const& filename)
         map.append_attribute("backgroundcolor") = mBackgroundColor.c_str();
     map.append_attribute("nextobjectid") = mNextObjectId;
 
-    mProperties.saveToNode(map);
-    doc.save_file(filename.c_str());
+    saveProperties(map);
 
     for (std::size_t i = 0; i < mTilesets.size(); i++)
     {
@@ -108,79 +143,19 @@ bool Map::saveToFile(std::string const& filename)
 
     for (std::size_t i = 0; i < mLayers.size(); i++)
     {
-        pugi::xml_node layer = map.append_child("layer");
-        if (!mLayers[i].saveToNode(layer))
-            std::cerr << "Layer " << mLayers[i].getName() << " hasn't been save correctly" << std::endl;
+        pugi::xml_node layer;
+        LayerType type = mLayers[i]->getLayerType();
+        switch (type)
+        {
+            case tmx::EImageLayer: layer = map.append_child("imagelayer"); break;
+            case tmx::EObjectGroup: layer = map.append_child("objectgroup"); break;
+            default: layer = map.append_child("layer"); break;
+        }
+        mLayers[i]->saveToNode(layer);
     }
+
+    doc.save_file(filename.c_str());
     return true;
-}
-
-void Map::loadTileset(pugi::xml_node& tilesetNode)
-{
-    Tileset tileset;
-    if (tileset.loadFromNode(tilesetNode))
-    {
-        bool nameFound = false;
-        std::size_t i;
-        for (i = 0; i < mTilesets.size(); i++)
-        {
-            if (mTilesets[i].getName() == tileset.getName())
-            {
-                nameFound = true;
-                break;
-            }
-        }
-        if (nameFound)
-        {
-            if (mTilesets[i].isTextureLoaded())
-            {
-                std::cerr << "Tileset already loaded" << std::endl;
-            }
-            else
-            {
-                mTilesets.erase(mTilesets.begin() + i);
-                mTilesets.push_back(tileset);
-            }
-        }
-        else
-        {
-            mTilesets.push_back(tileset);
-        }
-    }
-    else
-    {
-        std::cerr << "A tileset haven't been loaded" << std::endl;
-    }
-}
-
-void Map::loadLayer(pugi::xml_node& layerNode)
-{
-    Layer layer(this);
-    if (layer.loadFromNode(layerNode))
-    {
-        bool nameFound = false;
-        std::size_t i;
-        for (i = 0; i < mLayers.size(); i++)
-        {
-            if (mLayers[i].getName() == layer.getName())
-            {
-                nameFound = true;
-                break;
-            }
-        }
-        if (nameFound)
-        {
-            std::cerr << "Layer already loaded" << std::endl;
-        }
-        else
-        {
-            mLayers.push_back(layer);
-        }
-    }
-    else
-    {
-        std::cerr << "A layer haven't been loaded" << std::endl;
-    }
 }
 
 std::size_t Map::getLayerCount() const
@@ -188,28 +163,28 @@ std::size_t Map::getLayerCount() const
     return mLayers.size();
 }
 
-Layer& Map::getLayer(std::size_t index)
+detail::LayerBase& Map::getLayer(std::size_t index)
 {
     if (index < 0 || index >= mLayers.size())
     {
         std::cerr << "Out of range : " << index << " / " << mLayers.size() << std::endl;
     }
-    return mLayers[index];
+    return *mLayers[index];
 }
 
-void Map::render(sf::RenderTarget& target, sf::RenderStates states)
+void Map::draw(sf::RenderTarget& target, sf::RenderStates states) const
 {
     for (std::size_t i = 0; i < mLayers.size(); i++)
     {
-        mLayers[i].render(target, states);
+        target.draw(*mLayers.at(i), states);
     }
 }
 
-void Map::render(std::size_t index, sf::RenderTarget& target, sf::RenderStates states)
+void Map::render(std::size_t index, sf::RenderTarget& target, sf::RenderStates states) const
 {
     if (0 <= index && index < mLayers.size())
     {
-        mLayers[index].render(target, states);
+        target.draw(*mLayers.at(index), states);
     }
     else
     {
@@ -235,7 +210,14 @@ std::string Map::getOrientation() const
     return mOrientation;
 }
 
+sf::Vector2u Map::getMapSize() const
+{
+    return mMapSize;
+}
+
 sf::Vector2u Map::getTileSize() const
 {
     return mTileSize;
 }
+
+} // namespace tmx

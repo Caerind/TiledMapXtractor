@@ -1,5 +1,7 @@
 #include "Layer.hpp"
-#include "Map.hpp"
+
+namespace tmx
+{
 
 Layer::Layer(Map* map)
 {
@@ -7,38 +9,26 @@ Layer::Layer(Map* map)
     mTileset = nullptr;
     mVertices.setPrimitiveType(sf::Triangles);
 
-    mName = "";
-    mSize = {0, 0};
-    mOpacity = 1.f;
-    mVisible = true;
-    mOffset = {0.f, 0.f};
-
     mEncoding = "";
     mCompression = "";
 }
 
+LayerType Layer::getLayerType() const
+{
+    return tmx::ELayer;
+}
+
 bool Layer::loadFromNode(pugi::xml_node& layer)
 {
-    if (!layer)
+    if (!detail::LayerBase::loadFromNode(layer))
     {
-        std::cerr << "Invalid layer node" << std::endl;
         return false;
-    }
-    for (pugi::xml_attribute attr = layer.first_attribute(); attr; attr = attr.next_attribute())
-    {
-        if (attr.name() == std::string("name")) mName = attr.value();
-        if (attr.name() == std::string("width")) mSize.x = attr.as_uint();
-        if (attr.name() == std::string("height")) mSize.y = attr.as_uint();
-        if (attr.name() == std::string("opacity")) mOpacity = attr.as_float();
-        if (attr.name() == std::string("visible")) mVisible = attr.as_bool();
-        if (attr.name() == std::string("offsetx")) mOffset.x = attr.as_float();
-        if (attr.name() == std::string("offsety")) mOffset.y = attr.as_float();
     }
 
     pugi::xml_node data = layer.child("data");
     if (!data)
     {
-        std::cerr << "Invalid data node" << std::endl;
+        std::cerr << "Invalid data node" << mName << std::endl;
         return false;
     }
     for (pugi::xml_attribute attr = data.first_attribute(); attr; attr = attr.next_attribute())
@@ -54,43 +44,26 @@ bool Layer::loadFromNode(pugi::xml_node& layer)
         return false;
     }
 
-    pugi::xml_node properties = layer.child("properties");
-    if (properties)
-        mProperties.loadFromNode(properties);
-
     return true;
 }
 
-bool Layer::saveToNode(pugi::xml_node& layer)
+void Layer::saveToNode(pugi::xml_node& layer)
 {
-    layer.append_attribute("name") = mName.c_str();
-    layer.append_attribute("width") = mSize.x;
-    layer.append_attribute("height") = mSize.y;
-    if (mOpacity != 1.f)
-        layer.append_attribute("opacity") = mOpacity;
-    if (!mVisible)
-        layer.append_attribute("visible") = mVisible;
-    if (mOffset.x != 0.f)
-        layer.append_attribute("offsetx") = mOffset.x;
-    if (mOffset.y != 0.f)
-        layer.append_attribute("offsety") = mOffset.y;
-
+    detail::LayerBase::saveToNode(layer);
+    layer.append_attribute("width") = mMap->getMapSize().x;
+    layer.append_attribute("height") = mMap->getMapSize().y;
     pugi::xml_node data = layer.append_child("data");
     data.append_attribute("encoding") = mEncoding.c_str();
     data.append_attribute("compression") = mCompression.c_str();
-
     data.text().set(getCode().c_str());
-
-    mProperties.saveToNode(layer);
-
-    return true;
 }
 
 void Layer::setTileId(sf::Vector2u coords, unsigned int id)
 {
-    if (0 <= coords.x && 0 <= coords.y && coords.x < mSize.x && coords.y < mSize.y)
+    sf::Vector2u size = mMap->getMapSize();
+    if (0 <= coords.x && coords.x < size.x && 0 <= coords.y && coords.y < size.y)
     {
-        sf::Vertex* tri = &mVertices[(coords.x + coords.y * mSize.x) * 6];
+        sf::Vertex* tri = &mVertices[(coords.x + coords.y * mMap->getMapSize().x) * 6];
         if (id == 0)
         {
             for (std::size_t i = 0; i < 6; i++)
@@ -127,9 +100,10 @@ void Layer::setTileId(sf::Vector2u coords, unsigned int id)
 
 unsigned int Layer::getTileId(sf::Vector2u coords)
 {
-    if (0 <= coords.x && coords.x < mSize.x && 0 <= coords.y && coords.y < mSize.y)
+    sf::Vector2u size = mMap->getMapSize();
+    if (0 <= coords.x && coords.x < size.x && 0 <= coords.y && coords.y < size.y)
     {
-        sf::Vertex* tri = &mVertices[(coords.x + coords.y * mSize.x) * 6];
+        sf::Vertex* tri = &mVertices[(coords.x + coords.y * size.x) * 6];
         if (tri[0].texCoords != tri[2].texCoords && mTileset != nullptr)
         {
             return mTileset->toId(sf::Vector2u(tri->texCoords.x, tri->texCoords.y));
@@ -138,18 +112,14 @@ unsigned int Layer::getTileId(sf::Vector2u coords)
     return 0;
 }
 
-std::string Layer::getName() const
-{
-    return mName;
-}
-
-void Layer::render(sf::RenderTarget& target, sf::RenderStates states)
+void Layer::draw(sf::RenderTarget& target, sf::RenderStates states) const
 {
     if (mVisible)
     {
-        states.transform.translate(mOffset);
+        states.transform.translate(static_cast<sf::Vector2f>(mOffset));
         if (mTileset != nullptr)
         {
+            states.transform.translate(static_cast<sf::Vector2f>(mTileset->getTileOffset()));
             states.texture = &mTileset->getTexture();
         }
         target.draw(mVertices, states);
@@ -176,7 +146,8 @@ bool Layer::loadFromCode(std::string const& code)
         return false;
     }
     std::vector<unsigned char> byteVector;
-    byteVector.reserve(mSize.x * mSize.y * 4);
+    sf::Vector2u size = mMap->getMapSize();
+    byteVector.reserve(size.x * size.y * 4);
     for (std::string::iterator i = data.begin(); i != data.end(); ++i)
         byteVector.push_back(*i);
     for (std::size_t i = 0; i < byteVector.size() - 3; i += 4)
@@ -184,7 +155,7 @@ bool Layer::loadFromCode(std::string const& code)
         std::size_t id = byteVector[i] | byteVector[i+1] << 8 | byteVector[i+2] << 16 | byteVector[i+3] << 24;
         setTileId(coords, id);
         //std::cout << id << " ";
-        coords.x = (coords.x + 1) % mSize.x;
+        coords.x = (coords.x + 1) % size.x;
         if (coords.x == 0)
         {
             coords.y++;
@@ -208,11 +179,12 @@ std::string Layer::getCode()
     // TODO : Handle encoding and compressing
 
     std::string data;
-    data.reserve(mSize.x * mSize.y * 4);
+    sf::Vector2u size = mMap->getMapSize();
+    data.reserve(size.x * size.y * 4);
     sf::Vector2u coords;
-    for (coords.y = 0; coords.y < mSize.y; coords.y++)
+    for (coords.y = 0; coords.y < size.y; coords.y++)
     {
-        for (coords.x = 0; coords.x < mSize.x; coords.x++)
+        for (coords.x = 0; coords.x < size.x; coords.x++)
         {
             const std::size_t id = getTileId(coords);
             //std::cout << id << " ";
@@ -234,23 +206,26 @@ void Layer::update()
     if (mMap != nullptr)
     {
         std::string orientation = mMap->getOrientation();
+        sf::Vector2u size = mMap->getMapSize();
         sf::Vector2u tileSize = mMap->getTileSize();
 
         // TODO : Handle different orientation
 
-        mVertices.resize(mSize.x * mSize.y * 6);
-        for (std::size_t i = 0; i < mSize.x; ++i)
+        mVertices.resize(size.x * size.y * 6);
+        for (std::size_t i = 0; i < size.x; ++i)
         {
-            for (std::size_t j = 0; j < mSize.y; ++j)
+            for (std::size_t j = 0; j < size.y; ++j)
             {
-                sf::Vertex* quad = &mVertices[(i + j * mSize.x) * 6];
-                quad[0].position = sf::Vector2f(i * tileSize.x, j * tileSize.y);
-                quad[1].position = sf::Vector2f((i + 1) * tileSize.x, j * tileSize.y);
-                quad[2].position = sf::Vector2f((i + 1) * tileSize.x, (j + 1) * tileSize.y);
-                quad[3].position = quad[2].position;
-                quad[4].position = sf::Vector2f(i * tileSize.x, (j + 1) * tileSize.y);
-                quad[5].position = quad[0].position;
+                sf::Vertex* tri = &mVertices[(i + j * size.x) * 6];
+                tri[0].position = sf::Vector2f(i * tileSize.x, j * tileSize.y);
+                tri[1].position = sf::Vector2f((i + 1) * tileSize.x, j * tileSize.y);
+                tri[2].position = sf::Vector2f((i + 1) * tileSize.x, (j + 1) * tileSize.y);
+                tri[3].position = tri[2].position;
+                tri[4].position = sf::Vector2f(i * tileSize.x, (j + 1) * tileSize.y);
+                tri[5].position = tri[0].position;
             }
         }
     }
 }
+
+} // namespace tmx

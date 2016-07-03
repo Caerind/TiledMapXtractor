@@ -1,16 +1,12 @@
-#ifndef TILESET_HPP
-#define TILESET_HPP
+#ifndef TMX_TILESET_HPP
+#define TMX_TILESET_HPP
 
-#include <iostream>
-#include <sstream>
+#include "Utils.hpp"
 
-#include <SFML/Graphics/Texture.hpp>
+namespace tmx
+{
 
-#include "pugixml.hpp"
-
-#include "Properties.hpp"
-
-class Tileset
+class Tileset : public detail::PropertiesHolder
 {
     public:
         Tileset();
@@ -22,11 +18,64 @@ class Tileset
         unsigned int getFirstGid() const;
         unsigned int getTileCount() const;
         sf::Vector2u getTileSize() const;
+        sf::Vector2i getTileOffset() const;
 
-        bool isTextureLoaded() const;
         sf::Texture& getTexture();
         sf::Vector2u toPos(unsigned int id);
         unsigned int toId(sf::Vector2u const& pos);
+
+        class Terrain : public PropertiesHolder
+        {
+            public:
+                Terrain();
+
+                void loadFromNode(pugi::xml_node& terrain);
+                void saveToNode(pugi::xml_node& terrain);
+
+                std::string getName() const;
+                unsigned int getTile() const;
+
+            protected:
+                std::string mName;
+                unsigned int mTile;
+        };
+
+        class Tile : public PropertiesHolder
+        {
+            public:
+                Tile();
+
+                void loadFromNode(pugi::xml_node& tile);
+                void saveToNode(pugi::xml_node& tile);
+
+                class Animation
+                {
+                    public:
+                        Animation();
+
+                        void loadFromNode(pugi::xml_node& animation);
+                        void saveToNode(pugi::xml_node& animation);
+
+                        struct Frame
+                        {
+                            unsigned int tileId;
+                            float duration; // TODO : Is float ?
+                        };
+
+                        Frame& getFrame(std::size_t index);
+                        std::size_t getFrameCount() const;
+
+                    private:
+                        std::vector<Frame> mFrames;
+                };
+
+            private:
+                unsigned int mId;
+                std::array<std::string,4> mTerrains;
+                float mProbability;
+
+                std::vector<Animation> mAnimations;
+        };
 
     protected:
         unsigned int mFirstGid;
@@ -37,16 +86,15 @@ class Tileset
         unsigned int mMargin;
         unsigned int mTileCount;
         unsigned int mColumns;
+        sf::Vector2i mTileOffset;
 
-        std::string mImageFormat;
-        std::string mImageSource;
-        std::string mImageTransparent;
-        sf::Vector2u mImageSize;
-
+        detail::Image mImage;
         sf::Texture mTexture;
-        bool mTextureLoaded;
 
-        Properties mProperties;
+        std::vector<Terrain> mTerrains;
+        std::vector<Tile> mTiles;
 };
 
-#endif // TILESET_HPP
+} // namespace tmx
+
+#endif // TMX_TILESET_HPP

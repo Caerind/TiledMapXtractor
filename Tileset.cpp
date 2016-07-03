@@ -1,5 +1,8 @@
 #include "Tileset.hpp"
 
+namespace tmx
+{
+
 Tileset::Tileset()
 {
     mFirstGid = 1;
@@ -10,13 +13,7 @@ Tileset::Tileset()
     mMargin = 0;
     mTileCount = 0;
     mColumns = 0;
-
-    mImageFormat = "";
-    mImageSource = "";
-    mImageTransparent = "";
-    mImageSize = {0, 0};
-
-    mTextureLoaded = false;
+    mTileOffset = {0, 0};
 }
 
 bool Tileset::loadFromNode(pugi::xml_node& tileset)
@@ -39,52 +36,59 @@ bool Tileset::loadFromNode(pugi::xml_node& tileset)
         if (attr.name() == std::string("columns")) mColumns = attr.as_uint();
     }
 
+    pugi::xml_node offset = tileset.child("offset");
+    if (offset)
+    {
+        pugi::xml_attribute attr = offset.attribute("x");
+        if (attr)
+            mTileOffset.x = attr.as_int();
+        attr = offset.attribute("y");
+        if (attr)
+            mTileOffset.y = attr.as_int();
+    }
+
     pugi::xml_node image = tileset.child("image");
-    if (!image)
-    {
-        std::cerr << "Invalid tileset node" << std::endl;
-        return false;
-    }
-    for (pugi::xml_attribute attr = image.first_attribute(); attr; attr = attr.next_attribute())
-    {
-        if (attr.name() == std::string("format")) mImageFormat = attr.value();
-        if (attr.name() == std::string("source")) mImageSource = attr.value();
-        if (attr.name() == std::string("trans")) mImageTransparent = attr.value();
-        if (attr.name() == std::string("width")) mImageSize.x = attr.as_uint();
-        if (attr.name() == std::string("height")) mImageSize.y = attr.as_uint();
-    }
-    if (mImageSource != "")
+    mImage.loadFromNode(image);
+
+    std::string source = mImage.getSource();
+    if (source != "")
     {
         sf::Image image;
-        if (image.loadFromFile(mImageSource))
+        if (image.loadFromFile(source))
         {
-            mImageSize.x = image.getSize().x;
-            mImageSize.y = image.getSize().y;
-
-            int hexTrans;
-            std::stringstream ss(mImageTransparent);
-            ss >> std::hex >> hexTrans;
-            if (hexTrans >= 0)
+            sf::Color trans = mImage.getTransparent();
+            if (trans != sf::Color::Transparent)
             {
-                unsigned char red, green, blue;
-                red = hexTrans >> 16;
-                green = (hexTrans >> 8) & 0xff;
-                blue = hexTrans & 0xff;
-                image.createMaskFromColor(sf::Color(red, green, blue));
+                image.createMaskFromColor(trans);
             }
-            if (mTexture.loadFromImage(image))
+            if (!mTexture.loadFromImage(image))
             {
-                mTextureLoaded = true;
+                std::cerr << "Due to incomplete data, texture hasn't been loaded" << std::endl;
+                return false;
             }
         }
     }
-    if (!mTextureLoaded)
+
+    pugi::xml_node terrains = tileset.child("terraintypes");
+    if (terrains)
     {
-        std::cerr << "Due to incomplete data, texture hasn't been loaded" << std::endl;
+        for (pugi::xml_node terrain = terrains.child("terrain"); terrain; terrain = terrain.next_sibling("terrain"))
+        {
+            Terrain t;
+            t.loadFromNode(terrain);
+            mTerrains.push_back(t);
+        }
     }
-    pugi::xml_node properties = tileset.child("properties");
-    if (properties)
-        mProperties.loadFromNode(properties);
+
+    for (pugi::xml_node tile = tileset.child("tile"); tile; tile = tile.next_sibling("tile"))
+    {
+        Tile t;
+        t.loadFromNode(tile);
+        mTiles.push_back(t);
+    }
+
+    loadProperties(tileset);
+
     return true;
 }
 
@@ -103,14 +107,36 @@ bool Tileset::saveToNode(pugi::xml_node& tileset)
     tileset.append_attribute("tilecount") = mTileCount;
     tileset.append_attribute("columns") = mColumns;
 
+    if (mTileOffset != sf::Vector2i())
+    {
+        pugi::xml_node tileoffset = tileset.append_child("tileoffset");
+        if (mTileOffset.x != 0)
+            tileoffset.append_attribute("x") = mTileOffset.x;
+        if (mTileOffset.y != 0)
+            tileoffset.append_attribute("y") = mTileOffset.y;
+    }
+
     pugi::xml_node image = tileset.append_child("image");
-    if (mImageFormat != "")
-        image.append_attribute("format") = mImageFormat.c_str();
-    image.append_attribute("source") = mImageSource.c_str();
-    image.append_attribute("trans") = mImageTransparent.c_str();
-    image.append_attribute("width") = mImageSize.x;
-    image.append_attribute("height") = mImageSize.y;
-    mProperties.saveToNode(tileset);
+    mImage.saveToNode(image);
+
+    if (mTerrains.size() > 0)
+    {
+        pugi::xml_node terrains = tileset.append_child("terraintypes");
+        for (std::size_t i = 0; i < mTerrains.size(); i++)
+        {
+            pugi::xml_node terrain = terrains.append_child("terrain");
+            mTerrains[i].saveToNode(terrain);
+        }
+    }
+
+    for (std::size_t i = 0; i < mTiles.size(); i++)
+    {
+        pugi::xml_node tile = tileset.append_child("tile");
+        mTiles[i].saveToNode(tile);
+    }
+
+    saveProperties(tileset);
+
     return true;
 }
 
@@ -134,9 +160,9 @@ sf::Vector2u Tileset::getTileSize() const
     return mTileSize;
 }
 
-bool Tileset::isTextureLoaded() const
+sf::Vector2i Tileset::getTileOffset() const
 {
-    return mTextureLoaded;
+    return mTileOffset;
 }
 
 sf::Texture& Tileset::getTexture()
@@ -170,3 +196,116 @@ unsigned int Tileset::toId(sf::Vector2u const& pos)
     }
     return 0;
 }
+
+Tileset::Terrain::Terrain()
+{
+    mName = "";
+    mTile = 1; // TODO : Or 0 ?
+}
+
+void Tileset::Terrain::loadFromNode(pugi::xml_node& terrain)
+{
+    if (!terrain)
+        std::cerr << "Incorrect terrain node" << std::endl;
+
+    pugi::xml_attribute attr = terrain.attribute("name");
+    if (!attr)
+    {
+        std::cerr << "Terrain node has no attribute name" << std::endl;
+        return;
+    }
+    mName = attr.value();
+    attr = terrain.attribute("tile");
+    if (attr)
+        mTile = attr.as_uint();
+    loadProperties(terrain);
+}
+
+void Tileset::Terrain::saveToNode(pugi::xml_node& terrain)
+{
+    if (!terrain)
+    {
+        std::cerr << "Incorrect terrain node" << std::endl;
+        return;
+    }
+    terrain.append_attribute("name") = mName.c_str();
+    terrain.append_attribute("tile") = mTile;
+    saveProperties(terrain);
+}
+
+std::string Tileset::Terrain::getName() const
+{
+    return mName;
+}
+
+unsigned int Tileset::Terrain::getTile() const
+{
+    return mTile;
+}
+
+Tileset::Tile::Tile()
+{
+    mId = 0;
+    mProbability = 0.f;
+}
+
+void Tileset::Tile::loadFromNode(pugi::xml_node& tile)
+{
+
+}
+
+void Tileset::Tile::saveToNode(pugi::xml_node& tile)
+{
+
+}
+
+Tileset::Tile::Animation::Animation()
+{
+}
+
+void Tileset::Tile::Animation::loadFromNode(pugi::xml_node& animation)
+{
+    if (!animation)
+    {
+        std::cerr << "Incorrect animation node" << std::endl;
+        return;
+    }
+    for (pugi::xml_node frame = animation.child("frame"); frame; frame = frame.next_sibling("frame"))
+    {
+        Frame f;
+        f.tileId = frame.attribute("tileid").as_int();
+        f.duration = frame.attribute("duration").as_float();
+        mFrames.push_back(f);
+    }
+}
+
+void Tileset::Tile::Animation::saveToNode(pugi::xml_node& animation)
+{
+    if (!animation)
+    {
+        std::cerr << "Incorrect animation node" << std::endl;
+        return;
+    }
+    for (std::size_t i = 0; i < mFrames.size(); i++)
+    {
+        pugi::xml_node frame = animation.append_child("frame");
+        frame.append_attribute("tileid") = mFrames[i].tileId;
+        frame.append_attribute("duration") = mFrames[i].duration;
+    }
+}
+
+Tileset::Tile::Animation::Frame& Tileset::Tile::Animation::getFrame(std::size_t index)
+{
+    if (0 > index && index >= mFrames.size())
+    {
+        std::cerr << "Out of range" << std::endl;
+    }
+    return mFrames[index];
+}
+
+std::size_t Tileset::Tile::Animation::getFrameCount() const
+{
+    return mFrames.size();
+}
+
+} // namespace tmx

@@ -1,33 +1,29 @@
-#ifndef LAYERCOMPONENT_HPP
-#define LAYERCOMPONENT_HPP
+#ifndef TMX_TILELAYER_HPP
+#define TMX_TILELAYER_HPP
 
-#include <sstream>
-
-#include <SFML/Graphics/RenderStates.hpp>
-#include <SFML/Graphics/RenderTarget.hpp>
 #include <SFML/Graphics/VertexArray.hpp>
 
-#include "Compression.hpp"
-#include "pugixml.hpp"
-
-#include "Properties.hpp"
+#include "Map.hpp"
 #include "Tileset.hpp"
+#include "Utils.hpp"
 
-class Map;
-class Layer
+namespace tmx
+{
+
+class Layer : public detail::LayerBase
 {
     public:
         Layer(Map* map);
 
+        LayerType getLayerType() const;
+
         bool loadFromNode(pugi::xml_node& layer);
-        bool saveToNode(pugi::xml_node& layer);
+        void saveToNode(pugi::xml_node& layer);
 
         void setTileId(sf::Vector2u coords, unsigned int id);
         unsigned int getTileId(sf::Vector2u coords);
 
-        std::string getName() const;
-
-        void render(sf::RenderTarget& target, sf::RenderStates states = sf::RenderStates());
+        void draw(sf::RenderTarget& target, sf::RenderStates states = sf::RenderStates()) const;
 
         bool loadFromCode(std::string const& code);
         std::string getCode();
@@ -40,16 +36,10 @@ class Layer
         Tileset* mTileset;
         sf::VertexArray mVertices;
 
-        std::string mName;
-        sf::Vector2u mSize;
-        float mOpacity;
-        bool mVisible;
-        sf::Vector2f mOffset;
-
         std::string mEncoding;
         std::string mCompression;
-
-        Properties mProperties;
 };
 
-#endif // LAYERCOMPONENT_HPP
+} // namespace tmx
+
+#endif // TMX_LAYER_HPP
