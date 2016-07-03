@@ -12,6 +12,7 @@ class Map;
 namespace detail
 {
 
+// TODO : Modification on objects should notify the group to update
 class ObjectBase : public PropertiesHolder, public sf::Drawable
 {
     public:
@@ -47,6 +48,9 @@ class ObjectBase : public PropertiesHolder, public sf::Drawable
         virtual void draw(sf::RenderTarget& target, sf::RenderStates states = sf::RenderStates()) const = 0;
 
     protected:
+        virtual void update();
+
+    protected:
         unsigned int mId;
         unsigned int mGid;
         std::string mName;
@@ -68,7 +72,7 @@ class Object : public detail::ObjectBase
 
         ObjectType getObjectType() const;
 
-        void loadFromNode(pugi::xml_node& object);
+        void update();
 
         void setColor(sf::Color const& color);
 
@@ -88,7 +92,8 @@ class Ellipse : public detail::ObjectBase
 
         ObjectType getObjectType() const;
 
-        void loadFromNode(pugi::xml_node& object);
+        void update();
+
         void saveToNode(pugi::xml_node& object);
 
         void setColor(sf::Color const& color);
@@ -104,12 +109,15 @@ class Polygon : public detail::ObjectBase
     public:
         Polygon();
 
+        // TODO : Add/Remove/Modify Points
+
         typedef std::shared_ptr<Polygon> Ptr;
 
         ObjectType getObjectType() const;
 
         void loadFromNode(pugi::xml_node& object);
         void saveToNode(pugi::xml_node& object);
+        void update();
 
         void setColor(sf::Color const& color);
 
@@ -124,12 +132,15 @@ class Polyline : public detail::ObjectBase
     public:
         Polyline();
 
+        // TODO : Add/Remove/Modify Points
+
         typedef std::shared_ptr<Polyline> Ptr;
 
         ObjectType getObjectType() const;
 
         void loadFromNode(pugi::xml_node& object);
         void saveToNode(pugi::xml_node& object);
+        void update();
 
         void setColor(sf::Color const& color);
 

@@ -6,9 +6,10 @@ Library to support .tmx map with SFML
 
 ## Features
 
-- Loading (most usefull part of ) tiled map (at the moment)
-- Modification of the map
-- Saving as exact .tmx file
+- External tileset (.tsx)
+- Loading
+- Saving
+- Modification of the map at runtime (soon)
 
 ## What is not supported
 

@@ -74,7 +74,9 @@ template <> inline std::string toString<sf::Vector2f>(sf::Vector2f const& value)
 
 template <> inline std::string toString<sf::Color>(sf::Color const& value)
 {
-    return ""; // TODO : Color To String
+    std::ostringstream oss;
+    oss << std::hex << value.toInteger();
+    return oss.str(); // TODO : Update with # when fully supported by Tiled
 }
 
 template <> inline std::string fromString<std::string>(std::string const& string)

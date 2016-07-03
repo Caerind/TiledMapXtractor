@@ -34,6 +34,7 @@ void ObjectBase::loadFromNode(pugi::xml_node& object)
         if (attr.name() == std::string("rotation")) mRotation = attr.as_float();
         if (attr.name() == std::string("visible")) mVisible = detail::fromString<bool>(attr.as_string());
     }
+    update();
     loadProperties(object);
 }
 
@@ -51,10 +52,6 @@ void ObjectBase::saveToNode(pugi::xml_node& object)
     if (mRotation != 0.f) object.append_attribute("rotation") = mRotation;
     if (!mVisible) object.append_attribute("visible") = false;
     saveProperties(object);
-}
-
-void ObjectBase::setColor(sf::Color const& color)
-{
 }
 
 unsigned int ObjectBase::getId() const
@@ -105,6 +102,7 @@ void ObjectBase::setId(unsigned int id)
 void ObjectBase::setGid(unsigned int gid)
 {
     mGid = gid;
+    update();
 }
 
 void ObjectBase::setName(std::string const& name)
@@ -120,16 +118,19 @@ void ObjectBase::setType(std::string const& type)
 void ObjectBase::setPosition(sf::Vector2f const& position)
 {
     mPosition = position;
+    update();
 }
 
 void ObjectBase::setSize(sf::Vector2f const& size)
 {
     mSize = size;
+    update();
 }
 
 void ObjectBase::setRotation(float rotation)
 {
     mRotation = rotation;
+    update();
 }
 
 void ObjectBase::setVisible(bool visible)
@@ -137,9 +138,15 @@ void ObjectBase::setVisible(bool visible)
     mVisible = visible;
 }
 
+void ObjectBase::update()
+{
+}
+
 } // namespace detail
 
-Object::Object(Map& map) : mMap(map)
+Object::Object(Map& map)
+: mMap(map)
+, mShape()
 {
 }
 
@@ -148,12 +155,9 @@ ObjectType Object::getObjectType() const
     return tmx::ESimple;
 }
 
-void Object::loadFromNode(pugi::xml_node& object)
+void Object::update()
 {
-    detail::ObjectBase::loadFromNode(object);
-
     mShape.setSize(mSize);
-    mShape.setRotation(mRotation);
     if (mGid != 0)
     {
         Tileset* tileset = mMap.getTileset(mGid);
@@ -161,13 +165,11 @@ void Object::loadFromNode(pugi::xml_node& object)
         {
             return;
         }
-        mShape.setPosition(mPosition - sf::Vector2f(0.f, mSize.y));
         mShape.setTexture(&tileset->getTexture());
         mShape.setTextureRect(tileset->toRect(mGid));
     }
     else
     {
-        mShape.setPosition(mPosition);
         mShape.setOutlineThickness(2.f);
     }
 }
@@ -187,11 +189,21 @@ void Object::draw(sf::RenderTarget& target, sf::RenderStates states) const
 {
     if (mVisible)
     {
+        if (mGid == 0)
+        {
+            states.transform.translate(mPosition);
+        }
+        else
+        {
+            states.transform.translate(mPosition - sf::Vector2f(0.f, mSize.y));
+        }
+        states.transform.rotate(mRotation);
         target.draw(mShape, states);
     }
 }
 
 Ellipse::Ellipse()
+: mShape()
 {
 }
 
@@ -200,13 +212,9 @@ ObjectType Ellipse::getObjectType() const
     return tmx::EEllipse;
 }
 
-void Ellipse::loadFromNode(pugi::xml_node& object)
+void Ellipse::update()
 {
-    detail::ObjectBase::loadFromNode(object);
-
     mShape.setOutlineThickness(2.f);
-    mShape.setPosition(mPosition + mSize * 0.5f);
-    mShape.setRotation(mRotation);
     std::size_t count = 50;
     mShape.setPointCount(count);
     const float pi = 3.141592654f;
@@ -221,6 +229,7 @@ void Ellipse::loadFromNode(pugi::xml_node& object)
 
 void Ellipse::saveToNode(pugi::xml_node& object)
 {
+    if (!object) return;
     detail::ObjectBase::saveToNode(object);
     object.append_child("ellipse");
 }
@@ -237,6 +246,8 @@ void Ellipse::draw(sf::RenderTarget& target, sf::RenderStates states) const
 {
     if (mVisible)
     {
+        states.transform.translate(mPosition + mSize * 0.5f);
+        states.transform.rotate(mRotation);
         target.draw(mShape, states);
     }
 }
@@ -252,6 +263,7 @@ ObjectType Polygon::getObjectType() const
 
 void Polygon::loadFromNode(pugi::xml_node& object)
 {
+    if (!object) return;
     detail::ObjectBase::loadFromNode(object);
     pugi::xml_node polygon = object.child("polygon");
     if (!polygon)
@@ -278,8 +290,7 @@ void Polygon::loadFromNode(pugi::xml_node& object)
         mShape.setPoint(i, points[i]);
     }
     mShape.setOutlineThickness(2.f);
-    mShape.setPosition(mPosition);
-    mShape.setRotation(mRotation);
+    update();
 }
 
 void Polygon::saveToNode(pugi::xml_node& object)
@@ -297,6 +308,10 @@ void Polygon::saveToNode(pugi::xml_node& object)
     object.append_child("polygon").append_attribute("points") = points.c_str();
 }
 
+void Polygon::update()
+{
+}
+
 void Polygon::setColor(sf::Color const& color)
 {
     sf::Color c = color;
@@ -309,6 +324,8 @@ void Polygon::draw(sf::RenderTarget& target, sf::RenderStates states) const
 {
     if (mVisible)
     {
+        states.transform.translate(mPosition);
+        states.transform.rotate(mRotation);
         target.draw(mShape, states);
     }
 }
@@ -341,7 +358,9 @@ void Polyline::loadFromNode(pugi::xml_node& object)
     std::vector<sf::Vector2f> points;
     std::stringstream ss(attr.value());
     while (std::getline(ss, point, ' '))
+    {
         points.push_back(detail::fromString<sf::Vector2f>(point));
+    }
     if (points.size() > 1)
     {
         mShapes.resize(points.size()-1);
@@ -362,7 +381,9 @@ void Polyline::saveToNode(pugi::xml_node& object)
     detail::ObjectBase::saveToNode(object);
     std::string points;
     for (std::size_t i = 0; i < mShapes.size(); i++)
+    {
         points += detail::toString(mShapes[i].getPosition()) + " ";
+    }
     if (mShapes.size() > 0)
     {
         float r = mShapes.back().getSize().x;
@@ -370,6 +391,10 @@ void Polyline::saveToNode(pugi::xml_node& object)
         points += detail::toString(mShapes.back().getPosition() + sf::Vector2f(r * std::cos(angle), r * std::sin(angle)));
     }
     object.append_child("polyline").append_attribute("points") = points.c_str();
+}
+
+void Polyline::update()
+{
 }
 
 void Polyline::setColor(sf::Color const& color)
@@ -390,7 +415,9 @@ void Polyline::draw(sf::RenderTarget& target, sf::RenderStates states) const
         states.transform.translate(mPosition);
         states.transform.rotate(mRotation);
         for (std::size_t i = 0; i < mShapes.size(); i++)
+        {
             target.draw(mShapes[i], states);
+        }
     }
 }
 
@@ -409,14 +436,15 @@ LayerType ObjectGroup::getType() const
 
 bool ObjectGroup::loadFromNode(pugi::xml_node& layer)
 {
-    if (!detail::LayerBase::loadFromNode(layer))
-    {
-        return false;
-    }
+    if (!layer) return false;
     for (pugi::xml_attribute attr = layer.first_attribute(); attr; attr = attr.next_attribute())
     {
         if (attr.name() == std::string("color")) mColor = attr.as_string();
         if (attr.name() == std::string("draworder")) mDrawOrder = attr.as_string();
+    }
+    if (!detail::LayerBase::loadFromNode(layer))
+    {
+        return false;
     }
     for (pugi::xml_node object = layer.child("object"); object; object = object.next_sibling("object"))
     {
@@ -445,6 +473,9 @@ bool ObjectGroup::loadFromNode(pugi::xml_node& layer)
 
 void ObjectGroup::saveToNode(pugi::xml_node& layer)
 {
+    if (!layer) return;
+    if (mColor != "#a0a0a4") layer.append_attribute("color") = mColor.c_str();
+    if (mDrawOrder != "topdown") layer.append_attribute("draworder") = mDrawOrder.c_str();
     detail::LayerBase::saveToNode(layer);
     sort("index");
     for (std::size_t i = 0; i < mObjects.size(); i++)
@@ -452,8 +483,6 @@ void ObjectGroup::saveToNode(pugi::xml_node& layer)
         pugi::xml_node object = layer.append_child("object");
         mObjects[i]->saveToNode(object);
     }
-    if (mColor != "#a0a0a4") layer.append_attribute("color") = mColor.c_str();
-    if (mDrawOrder != "topdown") layer.append_attribute("draworder") = mDrawOrder.c_str();
 }
 
 void ObjectGroup::draw(sf::RenderTarget& target, sf::RenderStates states) const
@@ -478,6 +507,10 @@ sf::Color ObjectGroup::getColor() const
 void ObjectGroup::setColor(sf::Color const& color)
 {
     mColor = detail::toString<sf::Color>(color);
+    for (std::size_t i = 0; i < mObjects.size(); i++)
+    {
+        mObjects[i]->setColor(color);
+    }
 }
 
 std::string ObjectGroup::getDrawOrder() const
@@ -550,19 +583,7 @@ void ObjectGroup::addObject(detail::ObjectBase::Ptr object)
                 mObjects.back()->setColor(getColor());
                 sort(mDrawOrder);
             }
-            else
-            {
-                std::cerr << "Object already in this group" << std::endl;
-            }
         }
-        else
-        {
-            std::cerr << "Cant add an object with id 0" << std::endl;
-        }
-    }
-    else
-    {
-        std::cerr << "Cant add a nullptr" << std::endl;
     }
 }
 
