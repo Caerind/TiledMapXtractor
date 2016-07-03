@@ -18,10 +18,11 @@ class Tileset : public detail::PropertiesHolder
         unsigned int getFirstGid() const;
         unsigned int getTileCount() const;
         sf::Vector2u getTileSize() const;
-        sf::Vector2i getTileOffset() const;
+        sf::Vector2f getTileOffset() const;
 
         sf::Texture& getTexture();
-        sf::Vector2u toPos(unsigned int id);
+        sf::Vector2u toPos(unsigned int gid);
+        sf::IntRect toRect(unsigned int gid);
         unsigned int toId(sf::Vector2u const& pos);
 
         class Terrain : public PropertiesHolder
@@ -86,7 +87,7 @@ class Tileset : public detail::PropertiesHolder
         unsigned int mMargin;
         unsigned int mTileCount;
         unsigned int mColumns;
-        sf::Vector2i mTileOffset;
+        sf::Vector2f mTileOffset;
 
         detail::Image mImage;
         sf::Texture mTexture;

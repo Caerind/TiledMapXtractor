@@ -13,7 +13,7 @@ class ImageLayer : public detail::LayerBase
     public:
         ImageLayer();
 
-        LayerType getLayerType() const;
+        LayerType getType() const;
 
         bool loadFromNode(pugi::xml_node& layer);
         void saveToNode(pugi::xml_node& layer);

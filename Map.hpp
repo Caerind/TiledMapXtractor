@@ -1,7 +1,6 @@
 #ifndef TMX_MAP_HPP
 #define TMX_MAP_HPP
 
-#include "ImageLayer.hpp"
 #include "Tileset.hpp"
 #include "Utils.hpp"
 

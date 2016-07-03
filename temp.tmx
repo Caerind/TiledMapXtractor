@@ -1,5 +1,5 @@
 <?xml version="1.0"?>
-<map version="1" orientation="orthogonal" renderorder="right-down" width="32" height="32" tilewidth="16" tileheight="16" nextobjectid="8">
+<map version="1" orientation="orthogonal" renderorder="right-down" width="32" height="32" tilewidth="16" tileheight="16" nextobjectid="14">
 	<properties>
 		<property name="value" value="ee" />
 		<property name="name" value="test" />
@@ -17,6 +17,28 @@
 		</properties>
 		<data encoding="base64" compression="zlib">eNpjYBgFo2BwAU8g9gJi7wGyPxCIg4A4eIDcHAnEUUAcTWM3UxOQ42ZKgdYApiUtIu2nVbxoDXC8aDGMgtFyGJEPtGiQJoZSmTYU6yxqpgNalv/0SAf4/EiPum0k1t+jbdXRdDMKBhYAAOVLGIs=</data>
 	</layer>
+	<objectgroup name="Calque d'objets 1" color="#ff0f13">
+		<object id="1" x="107" y="71" width="87" height="272" rotation="3.06134165e-038">
+			<ellipse />
+		</object>
+		<object id="2" x="263" y="135" rotation="1.03696086e-043">
+			<polygon points="0,0 108,137 -4,302 161,-49 -70,187" />
+		</object>
+		<object id="3" x="67" y="410.200012" width="41" height="38" rotation="35.2000008" />
+		<object id="4" x="163" y="398" width="153" height="59" />
+		<object id="5" x="577" y="166" width="2" />
+		<object id="6" x="439" y="234" width="16" height="16" gid="2" />
+		<object id="7" x="425" y="295" width="16" height="16" gid="2" />
+		<object id="8" x="289" y="51">
+			<polyline points="0,0 53,50 153,-5 165,72" />
+		</object>
+		<object id="11" x="442" y="279">
+			<polygon points="0,0 -90,100 -25,168 41,103 47,29" />
+		</object>
+		<object id="13" x="28" y="27">
+			<polygon points="0,0 37,107 114,-14" />
+		</object>
+	</objectgroup>
 	<imagelayer name="Calque d'image 1" offsetx="78" offsety="108">
 		<image source="ortho.png" />
 	</imagelayer>

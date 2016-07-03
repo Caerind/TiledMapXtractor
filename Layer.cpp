@@ -13,7 +13,7 @@ Layer::Layer(Map* map)
     mCompression = "";
 }
 
-LayerType Layer::getLayerType() const
+LayerType Layer::getType() const
 {
     return tmx::ELayer;
 }
@@ -33,8 +33,8 @@ bool Layer::loadFromNode(pugi::xml_node& layer)
     }
     for (pugi::xml_attribute attr = data.first_attribute(); attr; attr = attr.next_attribute())
     {
-        if (attr.name() == std::string("encoding")) mEncoding = attr.value();
-        if (attr.name() == std::string("compression")) mCompression = attr.value();
+        if (attr.name() == std::string("encoding")) mEncoding = attr.as_string();
+        if (attr.name() == std::string("compression")) mCompression = attr.as_string();
     }
 
     update();
@@ -116,11 +116,14 @@ void Layer::draw(sf::RenderTarget& target, sf::RenderStates states) const
 {
     if (mVisible)
     {
-        states.transform.translate(static_cast<sf::Vector2f>(mOffset));
         if (mTileset != nullptr)
         {
-            states.transform.translate(static_cast<sf::Vector2f>(mTileset->getTileOffset()));
+            states.transform.translate(mTileset->getTileOffset() + mOffset);
             states.texture = &mTileset->getTexture();
+        }
+        else
+        {
+            states.transform.translate(mOffset);
         }
         target.draw(mVertices, states);
     }

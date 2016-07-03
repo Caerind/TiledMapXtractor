@@ -7,7 +7,7 @@ ImageLayer::ImageLayer()
 {
 }
 
-LayerType ImageLayer::getLayerType() const
+LayerType ImageLayer::getType() const
 {
     return tmx::EImageLayer;
 }
@@ -54,7 +54,7 @@ void ImageLayer::draw(sf::RenderTarget& target, sf::RenderStates states) const
 {
     if (mVisible)
     {
-        states.transform.translate(static_cast<sf::Vector2f>(mOffset));
+        states.transform.translate(mOffset);
         target.draw(mSprite, states);
     }
 }

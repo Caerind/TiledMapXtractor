@@ -1,5 +1,7 @@
 #include "Map.hpp"
+#include "ImageLayer.hpp"
 #include "Layer.hpp"
+#include "ObjectGroup.hpp"
 
 namespace tmx
 {
@@ -43,16 +45,16 @@ bool Map::loadFromFile(std::string const& filename)
     for (pugi::xml_attribute attr = map.first_attribute(); attr; attr = attr.next_attribute())
     {
         if (attr.name() == std::string("version")) mVersion = attr.as_float();
-        if (attr.name() == std::string("orientation")) mOrientation = attr.value();
-        if (attr.name() == std::string("renderorder")) mRenderOrder = attr.value();
+        if (attr.name() == std::string("orientation")) mOrientation = attr.as_string();
+        if (attr.name() == std::string("renderorder")) mRenderOrder = attr.as_string();
         if (attr.name() == std::string("width")) mMapSize.x = attr.as_uint();
         if (attr.name() == std::string("height")) mMapSize.y = attr.as_uint();
         if (attr.name() == std::string("tilewidth")) mTileSize.x = attr.as_uint();
         if (attr.name() == std::string("tileheight")) mTileSize.y = attr.as_uint();
         if (attr.name() == std::string("hexsidelength")) mHexSideLength = attr.as_uint();
-        if (attr.name() == std::string("staggeraxis")) mStaggerAxis = attr.value();
-        if (attr.name() == std::string("staggerindex")) mStaggerIndex = attr.value();
-        if (attr.name() == std::string("backgroundcolor")) mBackgroundColor = attr.value();
+        if (attr.name() == std::string("staggeraxis")) mStaggerAxis = attr.as_string();
+        if (attr.name() == std::string("staggerindex")) mStaggerIndex = attr.as_string();
+        if (attr.name() == std::string("backgroundcolor")) mBackgroundColor = attr.as_string();
         if (attr.name() == std::string("nextobjectid")) mNextObjectId = attr.as_uint();
     }
 
@@ -86,7 +88,16 @@ bool Map::loadFromFile(std::string const& filename)
     }
     for (pugi::xml_node objectgroup = map.child("objectgroup"); objectgroup; objectgroup = objectgroup.next_sibling("objectgroup"))
     {
-        //loadObjectGroup(objectgroup);
+        ObjectGroup* obj = new ObjectGroup(this);
+        if (obj->loadFromNode(objectgroup))
+        {
+            if (std::find_if(mLayers.begin(),mLayers.end(),[&obj](detail::LayerBase* l)->bool{return (l->getName() == obj->getName());}) == mLayers.end())
+                mLayers.push_back(obj);
+            else
+                std::cerr << "ObjectGroup already loaded" << std::endl;
+        }
+        else
+            std::cerr << "ObjectGroup has not been loaded" << std::endl;
     }
     for (pugi::xml_node imagelayer = map.child("imagelayer"); imagelayer; imagelayer = imagelayer.next_sibling("imagelayer"))
     {
@@ -144,7 +155,7 @@ bool Map::saveToFile(std::string const& filename)
     for (std::size_t i = 0; i < mLayers.size(); i++)
     {
         pugi::xml_node layer;
-        LayerType type = mLayers[i]->getLayerType();
+        LayerType type = mLayers[i]->getType();
         switch (type)
         {
             case tmx::EImageLayer: layer = map.append_child("imagelayer"); break;

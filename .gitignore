@@ -1,7 +1,5 @@
 bin/*
 obj/*
-bin*
-obj*
 *.layout
 *.cbp
 *.depend

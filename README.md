@@ -2,7 +2,7 @@
 
 Library to support .tmx map with SFML
 
-(The library has only 2 days at the moment so most things aren't done yet, come back next week maybe ;) )
+(The library has only 3 days at the moment so most things aren't done yet, come back next week maybe ;) )
 
 ## Features
 
@@ -13,14 +13,14 @@ Library to support .tmx map with SFML
 
 ## What is not supported
 
-As the library is pretty new, (2 days only), most features will be added soon
+As the library is pretty new, (3 days only), most features will be added soon
 
-- External Tileset
+- Tileset:Source
 - Multiple tilesets for rendering
 - Tileset:Tile:ObjectGroup
 - Tileset:Tile:Image
 - Map:Orientation
 - Map:RenderOrder
 - Map:BackgroundColor
-- ObjectGroup
+- Object:Concave Polygon
 - Image:Data

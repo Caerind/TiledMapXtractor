@@ -5,9 +5,12 @@
 #include <sstream>
 #include <unordered_map>
 
+#include <SFML/Graphics/ConvexShape.hpp>
 #include <SFML/Graphics/Drawable.hpp>
+#include <SFML/Graphics/RectangleShape.hpp>
 #include <SFML/Graphics/RenderStates.hpp>
 #include <SFML/Graphics/RenderTarget.hpp>
+#include <SFML/Graphics/Shape.hpp>
 #include <SFML/Graphics/Texture.hpp>
 
 #include "Compression.hpp"
@@ -21,6 +24,14 @@ enum LayerType
     ELayer,
     EObjectGroup,
     EImageLayer
+};
+
+enum ObjectType
+{
+    ESimple,
+    EEllipse,
+    EPolygon,
+    EPolyline
 };
 
 namespace detail
@@ -42,6 +53,57 @@ T fromString(std::string const& string)
     iss >> value;
     return value;
 }
+
+template <> inline std::string toString<std::string>(std::string const& value)
+{
+    return value;
+}
+
+template <> inline std::string toString<bool>(bool const& value)
+{
+    return (value) ? "true" : "false";
+}
+
+template <> inline std::string toString<sf::Vector2f>(sf::Vector2f const& value)
+{
+    std::ostringstream oss;
+    oss << value.x << "," << value.y;
+    return oss.str();
+}
+
+template <> inline std::string fromString<std::string>(std::string const& string)
+{
+    return string;
+}
+
+template <> inline bool fromString<bool>(std::string const& string)
+{
+    if (string == "true")
+        return true;
+    if (string == "false")
+        return false;
+    bool value;
+    std::istringstream iss(string);
+    iss >> value;
+    return value;
+}
+
+template <> inline sf::Vector2f fromString<sf::Vector2f>(std::string const& string)
+{
+    sf::Vector2f vector;
+    std::size_t found = string.find_first_of(',');
+    if (found != std::string::npos)
+    {
+        std::istringstream iss(string.substr(0, found));
+        iss >> vector.x;
+        iss.clear();
+        iss.str(string.substr(found + 1));
+        iss >> vector.y;
+    }
+    return vector;
+}
+
+sf::Color stringToColor(std::string const& color);
 
 class PropertiesHolder
 {
@@ -86,7 +148,7 @@ class LayerBase : public PropertiesHolder, public sf::Drawable
 
         virtual void draw(sf::RenderTarget& target, sf::RenderStates states = sf::RenderStates()) const = 0;
 
-        virtual LayerType getLayerType() const = 0;
+        virtual LayerType getType() const = 0;
 
         virtual bool loadFromNode(pugi::xml_node& layer);
         virtual void saveToNode(pugi::xml_node& layer);
@@ -95,7 +157,7 @@ class LayerBase : public PropertiesHolder, public sf::Drawable
 
     protected:
         std::string mName;
-        sf::Vector2i mOffset;
+        sf::Vector2f mOffset;
         float mOpacity;
         bool mVisible;
 };

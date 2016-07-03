@@ -13,7 +13,7 @@ Tileset::Tileset()
     mMargin = 0;
     mTileCount = 0;
     mColumns = 0;
-    mTileOffset = {0, 0};
+    mTileOffset = {0.f, 0.f};
 }
 
 bool Tileset::loadFromNode(pugi::xml_node& tileset)
@@ -26,8 +26,8 @@ bool Tileset::loadFromNode(pugi::xml_node& tileset)
     for (pugi::xml_attribute attr = tileset.first_attribute(); attr; attr = attr.next_attribute())
     {
         if (attr.name() == std::string("firstgid")) mFirstGid = attr.as_uint();
-        if (attr.name() == std::string("source")) mSource = attr.value();
-        if (attr.name() == std::string("name")) mName = attr.value();
+        if (attr.name() == std::string("source")) mSource = attr.as_string();
+        if (attr.name() == std::string("name")) mName = attr.as_string();
         if (attr.name() == std::string("tilewidth")) mTileSize.x = attr.as_uint();
         if (attr.name() == std::string("tileheight")) mTileSize.y = attr.as_uint();
         if (attr.name() == std::string("spacing")) mSpacing = attr.as_uint();
@@ -41,10 +41,10 @@ bool Tileset::loadFromNode(pugi::xml_node& tileset)
     {
         pugi::xml_attribute attr = offset.attribute("x");
         if (attr)
-            mTileOffset.x = attr.as_int();
+            mTileOffset.x = attr.as_float();
         attr = offset.attribute("y");
         if (attr)
-            mTileOffset.y = attr.as_int();
+            mTileOffset.y = attr.as_float();
     }
 
     pugi::xml_node image = tileset.child("image");
@@ -74,17 +74,15 @@ bool Tileset::loadFromNode(pugi::xml_node& tileset)
     {
         for (pugi::xml_node terrain = terrains.child("terrain"); terrain; terrain = terrain.next_sibling("terrain"))
         {
-            Terrain t;
-            t.loadFromNode(terrain);
-            mTerrains.push_back(t);
+            mTerrains.push_back(Terrain());
+            mTerrains.back().loadFromNode(terrain);
         }
     }
 
     for (pugi::xml_node tile = tileset.child("tile"); tile; tile = tile.next_sibling("tile"))
     {
-        Tile t;
-        t.loadFromNode(tile);
-        mTiles.push_back(t);
+        mTiles.push_back(Tile());
+        mTiles.back().loadFromNode(tile);
     }
 
     loadProperties(tileset);
@@ -107,12 +105,12 @@ bool Tileset::saveToNode(pugi::xml_node& tileset)
     tileset.append_attribute("tilecount") = mTileCount;
     tileset.append_attribute("columns") = mColumns;
 
-    if (mTileOffset != sf::Vector2i())
+    if (mTileOffset != sf::Vector2f())
     {
         pugi::xml_node tileoffset = tileset.append_child("tileoffset");
-        if (mTileOffset.x != 0)
+        if (mTileOffset.x != 0.f)
             tileoffset.append_attribute("x") = mTileOffset.x;
-        if (mTileOffset.y != 0)
+        if (mTileOffset.y != 0.f)
             tileoffset.append_attribute("y") = mTileOffset.y;
     }
 
@@ -160,7 +158,7 @@ sf::Vector2u Tileset::getTileSize() const
     return mTileSize;
 }
 
-sf::Vector2i Tileset::getTileOffset() const
+sf::Vector2f Tileset::getTileOffset() const
 {
     return mTileOffset;
 }
@@ -170,22 +168,42 @@ sf::Texture& Tileset::getTexture()
     return mTexture;
 }
 
-sf::Vector2u Tileset::toPos(unsigned int id)
+sf::Vector2u Tileset::toPos(unsigned int gid)
 {
-    if (id < mFirstGid || id >= mFirstGid + mTileCount)
+    if (gid < mFirstGid || gid >= mFirstGid + mTileCount)
     {
-        std::cerr << "This id (" << id << ") dont belong to this tileset" << std::endl;
+        std::cerr << "This id (" << gid << ") dont belong to this tileset" << std::endl;
         return sf::Vector2u();
     }
 
-    id -= mFirstGid;
+    gid -= mFirstGid; // Local id
     sf::Vector2u pos;
     if (mColumns > 0) // Avoid div 0
     {
-        pos.x = (id % mColumns) * (mTileSize.x + mSpacing) + mMargin;
-        pos.y = (id / mColumns) * (mTileSize.y + mSpacing) + mMargin;
+        pos.x = (gid % mColumns) * (mTileSize.x + mSpacing) + mMargin;
+        pos.y = (gid / mColumns) * (mTileSize.y + mSpacing) + mMargin;
     }
     return pos;
+}
+
+sf::IntRect Tileset::toRect(unsigned int gid)
+{
+    if (gid < mFirstGid || gid >= mFirstGid + mTileCount)
+    {
+        std::cerr << "This id (" << gid << ") dont belong to this tileset" << std::endl;
+        return sf::IntRect();
+    }
+
+    gid -= mFirstGid;
+    sf::IntRect rect;
+    if (mColumns > 0) // Avoid div 0
+    {
+        rect.left = (gid % mColumns) * (mTileSize.x + mSpacing) + mMargin;
+        rect.top = (gid / mColumns) * (mTileSize.y + mSpacing) + mMargin;
+        rect.width = mTileSize.x;
+        rect.height = mTileSize.y;
+    }
+    return rect;
 }
 
 unsigned int Tileset::toId(sf::Vector2u const& pos)
@@ -214,7 +232,7 @@ void Tileset::Terrain::loadFromNode(pugi::xml_node& terrain)
         std::cerr << "Terrain node has no attribute name" << std::endl;
         return;
     }
-    mName = attr.value();
+    mName = attr.as_string();
     attr = terrain.attribute("tile");
     if (attr)
         mTile = attr.as_uint();
