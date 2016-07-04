@@ -4,42 +4,50 @@
 
 int main()
 {
-    sf::RenderWindow window(sf::VideoMode(1024, 768), "SFML works!");
+    sf::RenderWindow window(sf::VideoMode(600,600), "SFML works!");
 
-	tmx::Map map;
-	map.loadFromFile("loaded.tmx");
-	map.saveToFile("saved.tmx");
+    tmx::Map map;
+    map.loadFromFile("sans-titre.tmx");
+    map.setRenderObjects(true);
 
-	tmx::Map map2;
-	map2.loadFromFile("saved.tmx");
-
-	tmx::Map map3;
-    tmx::ImageLayer::Ptr img = map3.createLayer<tmx::ImageLayer>("CalquePerso");
-    img->setOffset({20.f, 20.f});
-    img->setSource("ortho.png");
-    img->loadImage();
-	map3.saveToFile("created.tmx");
-
-
-	sf::RenderStates states2;
-	states2.transform.translate(512,0);
-
-	sf::RenderStates states3;
-	states3.transform.translate(256,256);
-
+    sf::View view = window.getView();
+    sf::Clock clock;
     while (window.isOpen())
     {
         sf::Event event;
         while (window.pollEvent(event))
         {
             if (event.type == sf::Event::Closed)
+            {
                 window.close();
+            }
+            if (event.type == sf::Event::MouseWheelScrolled && event.mouseWheelScroll.wheel == sf::Mouse::VerticalWheel)
+            {
+                if (event.mouseWheelScroll.delta < 1)
+                {
+                    view.zoom(1.2f);
+                }
+                else
+                {
+                    view.zoom(0.8f);
+                }
+            }
         }
 
+        sf::Vector2f mvt;
+        if (sf::Keyboard::isKeyPressed(sf::Keyboard::Z))
+            mvt.y--;
+        if (sf::Keyboard::isKeyPressed(sf::Keyboard::S))
+            mvt.y++;
+        if (sf::Keyboard::isKeyPressed(sf::Keyboard::Q))
+            mvt.x--;
+        if (sf::Keyboard::isKeyPressed(sf::Keyboard::D))
+            mvt.x++;
+        view.move(mvt * clock.restart().asSeconds() * 100.f);
+
         window.clear();
+        window.setView(view);
         window.draw(map);
-        window.draw(map2,states2);
-        window.draw(map3,states3);
         window.display();
     }
 

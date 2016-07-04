@@ -16,6 +16,9 @@ Map::Map()
 , mStaggerIndex("")
 , mBackgroundColor("#808080")
 , mNextObjectId(1)
+, mRenderObjects(false)
+, mTilesets()
+, mLayers()
 {
 }
 
@@ -74,10 +77,10 @@ bool Map::loadFromFile(std::string const& filename)
     }
     for (pugi::xml_node layer = map.child("layer"); layer; layer = layer.next_sibling("layer"))
     {
-        Layer::Ptr lyr = std::make_shared<Layer>(*this);
+        Layer* lyr = new Layer(*this);
         if (lyr->loadFromNode(layer))
         {
-            if (std::find_if(mLayers.begin(),mLayers.end(),[&lyr](LayerBase::Ptr l)->bool{return (l->getName() == lyr->getName());}) == mLayers.end())
+            if (std::find_if(mLayers.begin(),mLayers.end(),[&lyr](LayerBase* l)->bool{return (l->getName() == lyr->getName());}) == mLayers.end())
                 mLayers.push_back(lyr);
             else
                 std::cerr << "Layer already loaded" << std::endl;
@@ -87,10 +90,10 @@ bool Map::loadFromFile(std::string const& filename)
     }
     for (pugi::xml_node objectgroup = map.child("objectgroup"); objectgroup; objectgroup = objectgroup.next_sibling("objectgroup"))
     {
-        ObjectGroup::Ptr obj = std::make_shared<ObjectGroup>(*this);
+        ObjectGroup* obj = new ObjectGroup(*this);
         if (obj->loadFromNode(objectgroup))
         {
-            if (std::find_if(mLayers.begin(),mLayers.end(),[&obj](LayerBase::Ptr l)->bool{return (l->getName() == obj->getName());}) == mLayers.end())
+            if (std::find_if(mLayers.begin(),mLayers.end(),[&obj](LayerBase* l)->bool{return (l->getName() == obj->getName());}) == mLayers.end())
                 mLayers.push_back(obj);
             else
                 std::cerr << "ObjectGroup already loaded" << std::endl;
@@ -100,10 +103,10 @@ bool Map::loadFromFile(std::string const& filename)
     }
     for (pugi::xml_node imagelayer = map.child("imagelayer"); imagelayer; imagelayer = imagelayer.next_sibling("imagelayer"))
     {
-        ImageLayer::Ptr lyr = std::make_shared<ImageLayer>(*this);
+        ImageLayer* lyr = new ImageLayer(*this);
         if (lyr->loadFromNode(imagelayer))
         {
-            if (std::find_if(mLayers.begin(),mLayers.end(),[&lyr](LayerBase::Ptr l)->bool{return (l->getName() == lyr->getName());}) == mLayers.end())
+            if (std::find_if(mLayers.begin(),mLayers.end(),[&lyr](LayerBase* l)->bool{return (l->getName() == lyr->getName());}) == mLayers.end())
                 mLayers.push_back(lyr);
             else
                 std::cerr << "ImageLayer already loaded" << std::endl;
@@ -173,7 +176,7 @@ std::size_t Map::getLayerCount() const
     return mLayers.size();
 }
 
-LayerBase::Ptr Map::getLayer(std::size_t index)
+LayerBase* Map::getLayer(std::size_t index)
 {
     return mLayers[index];
 }
@@ -185,7 +188,7 @@ LayerType Map::getLayerType(std::size_t index)
 
 void Map::removeLayer(std::string const& name)
 {
-    mLayers.erase(std::remove_if(mLayers.begin(),mLayers.end(),[&name](LayerBase::Ptr l)->bool{return l->getName() == name;}),mLayers.end());
+    mLayers.erase(std::remove_if(mLayers.begin(),mLayers.end(),[&name](LayerBase* l)->bool{return l->getName() == name;}),mLayers.end());
 }
 
 void Map::renderBackground(sf::RenderTarget& target)
@@ -202,7 +205,17 @@ void Map::draw(sf::RenderTarget& target, sf::RenderStates states) const
 {
     for (std::size_t i = 0; i < mLayers.size(); i++)
     {
-        target.draw(*mLayers.at(i), states);
+        if (mLayers.at(i)->getLayerType() == EObjectGroup)
+        {
+            if (mRenderObjects)
+            {
+                target.draw(*mLayers.at(i), states);
+            }
+        }
+        else
+        {
+            target.draw(*mLayers.at(i), states);
+        }
     }
 }
 
@@ -236,6 +249,11 @@ std::string Map::getOrientation() const
     return mOrientation;
 }
 
+std::string Map::getRenderOrder() const
+{
+    return mRenderOrder;
+}
+
 sf::Vector2u Map::getMapSize() const
 {
     return mMapSize;
@@ -244,6 +262,31 @@ sf::Vector2u Map::getMapSize() const
 sf::Vector2u Map::getTileSize() const
 {
     return mTileSize;
+}
+
+unsigned int Map::getHexSideLength() const
+{
+    return mHexSideLength;
+}
+
+std::string Map::getStaggerAxis() const
+{
+    return mStaggerAxis;
+}
+
+std::string Map::getStaggerIndex() const
+{
+    return mStaggerIndex;
+}
+
+bool Map::getRenderObjects() const
+{
+    return mRenderObjects;
+}
+
+void Map::setRenderObjects(bool renderObjects)
+{
+    mRenderObjects = renderObjects;
 }
 
 } // namespace tmx

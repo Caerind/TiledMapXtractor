@@ -72,8 +72,8 @@ void Layer::setTileId(sf::Vector2u coords, unsigned int id)
 {
     if (0 <= coords.x && coords.x < mMap.getMapSize().x && 0 <= coords.y && coords.y < mMap.getMapSize().y)
     {
-        sf::Vertex* tri = &mVertices[(coords.x + coords.y * mMap.getMapSize().x) * 6];
-        if (id == 0)
+        sf::Vertex* tri = getVertex(coords);
+        if (id == 0 && tri != nullptr)
         {
             for (std::size_t i = 0; i < 6; i++)
             {
@@ -81,11 +81,12 @@ void Layer::setTileId(sf::Vector2u coords, unsigned int id)
                 tri[i].color = sf::Color::Transparent;
             }
         }
-        else
+        else if (tri != nullptr)
         {
             if (mTileset == nullptr)
             {
                 mTileset = mMap.getTileset(id);
+                update();
             }
             if (mTileset != nullptr)
             {
@@ -94,8 +95,8 @@ void Layer::setTileId(sf::Vector2u coords, unsigned int id)
                 tri[0].texCoords = sf::Vector2f(pos.x, pos.y);
                 tri[1].texCoords = sf::Vector2f(pos.x + size.x, pos.y);
                 tri[2].texCoords = sf::Vector2f(pos.x + size.x, pos.y + size.y);
-                tri[3].texCoords = tri[2].texCoords;
                 tri[4].texCoords = sf::Vector2f(pos.x, pos.y + size.y);
+                tri[3].texCoords = tri[2].texCoords;
                 tri[5].texCoords = tri[0].texCoords;
                 for (std::size_t i = 0; i < 6; i++)
                 {
@@ -218,24 +219,126 @@ void Layer::update()
 {
     std::string orientation = mMap.getOrientation();
     sf::Vector2u size = mMap.getMapSize();
-    sf::Vector2u tileSize = mMap.getTileSize();
-
-    // TODO : Handle different orientation
+    sf::Vector2f tileSize = static_cast<sf::Vector2f>(mMap.getTileSize());
+    sf::Vector2f texSize;
+    if (mTileset != nullptr)
+    {
+        texSize = static_cast<sf::Vector2f>(mTileset->getTileSize());
+    }
+    else
+    {
+        texSize = tileSize;
+    }
+    std::string axis = mMap.getStaggerAxis();
+    unsigned int index = (mMap.getStaggerIndex() == "odd") ? 0 : 1;
 
     mVertices.resize(size.x * size.y * 6);
     for (std::size_t i = 0; i < size.x; ++i)
     {
         for (std::size_t j = 0; j < size.y; ++j)
         {
-            sf::Vertex* tri = &mVertices[(i + j * size.x) * 6];
-            tri[0].position = sf::Vector2f(i * tileSize.x, j * tileSize.y);
-            tri[1].position = sf::Vector2f((i + 1) * tileSize.x, j * tileSize.y);
-            tri[2].position = sf::Vector2f((i + 1) * tileSize.x, (j + 1) * tileSize.y);
-            tri[3].position = tri[2].position;
-            tri[4].position = sf::Vector2f(i * tileSize.x, (j + 1) * tileSize.y);
-            tri[5].position = tri[0].position;
+            sf::Vector2f pos;
+            if (orientation == "orthogonal")
+            {
+                pos.x = i * tileSize.x;
+                pos.y = j * tileSize.y;
+            }
+            else if (orientation == "isometric")
+            {
+                pos.x = ((float)i-(float)j) * tileSize.x * 0.5f;
+                pos.y = (i+j) * tileSize.y * 0.5f;
+            }
+            else if (orientation == "staggered")
+            {
+                if (axis == "y")
+                {
+                    if ((j % 2) == index)
+                    {
+                        pos.x = i * tileSize.x;
+                    }
+                    else
+                    {
+                        pos.x = (i + 0.5f) * tileSize.x;
+                    }
+                    pos.y = j * tileSize.y * 0.5f;
+                }
+                else
+                {
+                    if ((i % 2) == index)
+                    {
+                        pos.y = j * tileSize.y;
+                    }
+                    else
+                    {
+                        pos.y = (j + 0.5f) * tileSize.y;
+                    }
+                    pos.x = i * tileSize.x * 0.5f;
+                }
+            }
+            else if (orientation == "hexagonal")
+            {
+                float hexSide = static_cast<float>(mMap.getHexSideLength());
+                if (axis == "y")
+                {
+                    if ((j % 2) == index)
+                    {
+                        pos.x = i * tileSize.x;
+                    }
+                    else
+                    {
+                        pos.x = (i + 0.5f) * tileSize.x;
+                    }
+                    pos.y = j * ((tileSize.y - hexSide) * 0.5f + hexSide);
+                }
+                else
+                {
+                    if ((i % 2) == index)
+                    {
+                        pos.y = j * tileSize.y;
+                    }
+                    else
+                    {
+                        pos.y = (j + 0.5f) * tileSize.y;
+                    }
+                    pos.x = i * ((tileSize.x - hexSide ) * 0.5f + hexSide);
+                }
+            }
+
+            sf::Vertex* tri = getVertex({i,j});
+            if (tri != nullptr)
+            {
+                tri[0].position = sf::Vector2f(pos.x, pos.y);
+                tri[1].position = sf::Vector2f(pos.x + texSize.x, pos.y);
+                tri[2].position = sf::Vector2f(pos.x + texSize.x, pos.y + texSize.y);
+                tri[4].position = sf::Vector2f(pos.x, pos.y + texSize.y);
+                tri[3].position = tri[2].position;
+                tri[5].position = tri[0].position;
+            }
         }
     }
+}
+
+sf::Vertex* Layer::getVertex(sf::Vector2u const& coords)
+{
+    std::string order = mMap.getRenderOrder();
+    unsigned int tile;
+    if (order == "right-up")
+    {
+        tile = (coords.x + (mMap.getMapSize().y - coords.y - 1) * mMap.getMapSize().x);
+    }
+    else if (order == "left-up")
+    {
+        tile = ((mMap.getMapSize().x - coords.x - 1) + (mMap.getMapSize().y - coords.y - 1) * mMap.getMapSize().x);
+    }
+    else if (order == "left-down")
+    {
+        tile = ((mMap.getMapSize().x - coords.x - 1) + mMap.getMapSize().y * mMap.getMapSize().x);
+    }
+    else
+    {
+        tile = (coords.x + coords.y * mMap.getMapSize().x);
+    }
+    return &mVertices[tile * 6];
 }
 
 } // namespace tmx

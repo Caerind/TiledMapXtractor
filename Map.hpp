@@ -16,12 +16,12 @@ class Map : public detail::PropertiesHolder, public sf::Drawable
         bool saveToFile(std::string const& filename);
 
         std::size_t getLayerCount() const;
-        LayerBase::Ptr getLayer(std::size_t index);
+        LayerBase* getLayer(std::size_t index);
         LayerType getLayerType(std::size_t index);
         template <typename T>
-        std::shared_ptr<T> getLayer(std::size_t index);
+        T* getLayer(std::size_t index);
         template <typename T>
-        std::shared_ptr<T> createLayer(std::string const& name);
+        T* createLayer(std::string const& name);
         void removeLayer(std::string const& name);
 
         void renderBackground(sf::RenderTarget& target);
@@ -31,8 +31,15 @@ class Map : public detail::PropertiesHolder, public sf::Drawable
         Tileset* getTileset(unsigned int id);
 
         std::string getOrientation() const;
+        std::string getRenderOrder() const;
         sf::Vector2u getMapSize() const;
         sf::Vector2u getTileSize() const;
+        unsigned int getHexSideLength() const;
+        std::string getStaggerAxis() const;
+        std::string getStaggerIndex() const;
+
+        bool getRenderObjects() const;
+        void setRenderObjects(bool renderObjects);
 
     private:
         float mVersion;
@@ -46,24 +53,26 @@ class Map : public detail::PropertiesHolder, public sf::Drawable
         std::string mBackgroundColor;
         unsigned int mNextObjectId;
 
+        bool mRenderObjects;
+
         std::vector<Tileset> mTilesets;
-        std::vector<LayerBase::Ptr> mLayers;
+        std::vector<LayerBase*> mLayers;
 };
 
 template <typename T>
-std::shared_ptr<T> Map::getLayer(std::size_t index)
+T* Map::getLayer(std::size_t index)
 {
-    return std::static_pointer_cast<T>(mLayers[index]);
+    return static_cast<T>(mLayers[index]);
 }
 
 template <typename T>
-std::shared_ptr<T> Map::createLayer(std::string const& name)
+T* Map::createLayer(std::string const& name)
 {
     if (name != "")
     {
-        if (std::find_if(mLayers.begin(),mLayers.end(),[&name](LayerBase::Ptr l)->bool{return (l->getName() == name);}) == mLayers.end())
+        if (std::find_if(mLayers.begin(),mLayers.end(),[&name](LayerBase* l)->bool{return (l->getName() == name);}) == mLayers.end())
         {
-            std::shared_ptr<T> p = std::make_shared<T>(*this);
+            T* p = new T(*this);
             p->setName(name);
             mLayers.push_back(p);
             return p;

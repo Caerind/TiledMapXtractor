@@ -12,8 +12,6 @@ class Polyline : public ObjectBase
     public:
         Polyline(ObjectGroup& group);
 
-        typedef std::shared_ptr<Polyline> Ptr;
-
         ObjectType getObjectType() const;
 
         void loadFromNode(pugi::xml_node const& object);

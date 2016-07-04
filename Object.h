@@ -13,8 +13,6 @@ class Object : public ObjectBase
     public:
         Object(ObjectGroup& group);
 
-        typedef std::shared_ptr<Object> Ptr;
-
         ObjectType getObjectType() const;
 
         void update();

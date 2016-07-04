@@ -12,8 +12,6 @@ class Ellipse : public ObjectBase
     public:
         Ellipse(ObjectGroup& group);
 
-        typedef std::shared_ptr<Ellipse> Ptr;
-
         ObjectType getObjectType() const;
 
         void setPointCount(std::size_t count);

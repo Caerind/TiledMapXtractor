@@ -2,7 +2,6 @@
 #define UTILS_HPP
 
 #include <iostream>
-#include <memory>
 #include <sstream>
 #include <unordered_map>
 
@@ -210,8 +209,6 @@ class LayerBase : public detail::PropertiesHolder, public sf::Drawable
     public:
         LayerBase();
 
-        typedef std::shared_ptr<LayerBase> Ptr;
-
         virtual void draw(sf::RenderTarget& target, sf::RenderStates states = sf::RenderStates()) const = 0;
 
         virtual LayerType getLayerType() const = 0;
@@ -240,8 +237,6 @@ class ImageLayer : public LayerBase
 {
     public:
         ImageLayer(Map& map);
-
-        typedef std::shared_ptr<ImageLayer> Ptr;
 
         LayerType getLayerType() const;
 

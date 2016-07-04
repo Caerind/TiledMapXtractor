@@ -31,13 +31,12 @@ void Object::update()
         mShape.setTexture(&tileset->getTexture());
         mShape.setTextureRect(tileset->toRect(mGid));
         // TODO : Tile Flipping
-        // TODO : Map Orientation
         std::string orientation = mGroup.getMap().getOrientation();
         if (orientation == "orthogonal")
         {
             mShape.setPosition(mPosition - sf::Vector2f(0.f, mSize.y));
         }
-        else if (orientation == "isometric")
+        else
         {
             mShape.setPosition(mPosition - sf::Vector2f(mSize.x * 0.5f, mSize.y));
         }

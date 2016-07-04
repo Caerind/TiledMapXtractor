@@ -12,8 +12,6 @@ class Polygon : public ObjectBase
     public:
         Polygon(ObjectGroup& group);
 
-        typedef std::shared_ptr<Polygon> Ptr;
-
         ObjectType getObjectType() const;
 
         void loadFromNode(pugi::xml_node const& object);

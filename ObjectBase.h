@@ -12,8 +12,6 @@ class ObjectBase : public detail::PropertiesHolder, public sf::Drawable
     public:
         ObjectBase(ObjectGroup& group);
 
-        typedef std::shared_ptr<ObjectBase> Ptr;
-
         virtual ObjectType getObjectType() const = 0;
 
         virtual void loadFromNode(pugi::xml_node const& object);

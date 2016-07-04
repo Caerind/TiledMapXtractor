@@ -14,8 +14,6 @@ class Layer : public LayerBase
     public:
         Layer(Map& map);
 
-        typedef std::shared_ptr<Layer> Ptr;
-
         LayerType getLayerType() const;
 
         bool loadFromNode(pugi::xml_node const& layer);
@@ -29,8 +27,10 @@ class Layer : public LayerBase
         bool loadFromCode(std::string const& code);
         std::string getCode();
 
-    protected:
         void update();
+
+    protected:
+        sf::Vertex* getVertex(sf::Vector2u const& coords);
 
     protected:
         Map& mMap;

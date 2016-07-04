@@ -46,19 +46,19 @@ bool ObjectGroup::loadFromNode(pugi::xml_node const& layer)
     {
         if (object.child("ellipse"))
         {
-            mObjects.push_back(std::make_shared<Ellipse>(*this));
+            mObjects.push_back(new Ellipse(*this));
         }
         else if (object.child("polygon"))
         {
-            mObjects.push_back(std::make_shared<Polygon>(*this));
+            mObjects.push_back(new Polygon(*this));
         }
         else if (object.child("polyline"))
         {
-            mObjects.push_back(std::make_shared<Polyline>(*this));
+            mObjects.push_back(new Polyline(*this));
         }
         else
         {
-            mObjects.push_back(std::make_shared<Object>(*this));
+            mObjects.push_back(new Object(*this));
         }
         mObjects.back()->loadFromNode(object);
     }
@@ -139,7 +139,7 @@ void ObjectGroup::sort(std::string const& order)
 {
     if (order == "index")
     {
-        std::sort(mObjects.begin(),mObjects.end(),[](ObjectBase::Ptr a, ObjectBase::Ptr b)
+        std::sort(mObjects.begin(),mObjects.end(),[](ObjectBase* a, ObjectBase* b)
         {
             if (a == nullptr || b == nullptr)
             {
@@ -150,7 +150,7 @@ void ObjectGroup::sort(std::string const& order)
     }
     else
     {
-        std::sort(mObjects.begin(),mObjects.end(),[](ObjectBase::Ptr a, ObjectBase::Ptr b)
+        std::sort(mObjects.begin(),mObjects.end(),[](ObjectBase* a, ObjectBase* b)
         {
             if (a == nullptr || b == nullptr)
             {
@@ -166,7 +166,7 @@ std::size_t ObjectGroup::getObjectCount() const
     return mObjects.size();
 }
 
-ObjectBase::Ptr ObjectGroup::getObject(std::size_t index)
+ObjectBase* ObjectGroup::getObject(std::size_t index)
 {
     return mObjects[index];
 }
@@ -178,7 +178,7 @@ ObjectType ObjectGroup::getObjectType(std::size_t index)
 
 void ObjectGroup::removeObject(unsigned int id)
 {
-    mObjects.erase(std::remove_if(mObjects.begin(),mObjects.end(),[&id](ObjectBase::Ptr o)->bool{return o->getId() == id;}), mObjects.end());
+    mObjects.erase(std::remove_if(mObjects.begin(),mObjects.end(),[&id](ObjectBase* o)->bool{return o->getId() == id;}), mObjects.end());
 }
 
 Map& ObjectGroup::getMap()

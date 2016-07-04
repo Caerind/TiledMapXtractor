@@ -1,26 +1,30 @@
 # TiledMapXtractor (TMX)
 
-Library to support .tmx map with SFML
-
-(The library has only 3 days at the moment so most things aren't done yet, come back next week maybe ;) )
+Library for .tmx map with SFML
 
 ## Features
 
-- External tileset (.tsx)
 - Loading
 - Saving
-- Modification of the map at runtime (soon)
+- Modification
+- Orthogonal, Isometric, Staggered and Hexagonal (both with support for Axis and Index)
+- Most objects are supported (not concave polygons and flipped tiles)
+- External tileset (.tsx)
+- Almost all .tmx data (Please use the issue tracker if your output isn't the same as your tiled editor)
 
-## What is not supported
+## What is not supported / TODO
 
-As the library is pretty new, (3 days only), most features will be added soon
+As the library is young, most features will be added soon
 
-- Multiple tilesets for rendering
+- Multiple tilesets for rendering (only one tileset per layer)
 - Tileset:Tile:ObjectGroup
 - Tileset:Tile:Image
-- Map:Orientation
-- Map:RenderOrder
 - Image:Data
 - Compression/Encoding mode (only base64 and zlib at the moment)
 - Object:Concave Polygon
 - Object:TileFlipping
+
+## Requirements
+
+- SFML 2.x
+- zlib
