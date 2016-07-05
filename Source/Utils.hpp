@@ -14,8 +14,9 @@
 #include <SFML/Graphics/Texture.hpp>
 #include <SFML/Graphics/VertexArray.hpp>
 
-#include "Compression.hpp"
-#include "pugixml.hpp"
+#include "../ExtLibs/Compression.hpp"
+#include "../ExtLibs/pugixml.hpp"
+#include "../ExtLibs/ConcaveShape.hpp"
 
 namespace tmx
 {

@@ -8,7 +8,7 @@ Library for [Tiled](http://www.mapeditor.org/) maps with [SFML](https://github.c
 - Saving
 - Modification
 - Orthogonal, Isometric, Staggered and Hexagonal (both with support for Axis and Index)
-- Objects (not concave polygons and flipped tiles)
+- Objects
 - All the encoding and compression formats
 - External tileset (.tsx)
 - Almost all .tmx data (Please use the issue tracker if your output isn't the same as your Tiled editor)
@@ -21,11 +21,14 @@ As the library is young, most features will be added soon
 - Tileset:Tile:ObjectGroup
 - Tileset:Tile:Image
 - Image:Data
-- Object:Concave Polygon
-- Object:TileFlipping
 
 ## Requirements
 
 - [SFML 2.x](https://github.com/SFML/SFML)
-- [pugixml](https://github.com/zeux/pugixml) (included)
 - [zlib](http://www.zlib.net/)
+
+## Thanks to
+
+- [pugixml](https://github.com/zeux/pugixml) : XML parser used in this project
+- [STP](https://github.com/edoren/STP) : Another great SFML .tmx library, where I take the encoding/compression functions from
+- [Thor](https://github.com/Bromeon/Thor) : SFML Extension, where I take the concave shape class from

@@ -31,7 +31,7 @@ class Polygon : public ObjectBase
         void draw(sf::RenderTarget& target, sf::RenderStates states = sf::RenderStates()) const;
 
     private:
-        sf::ConvexShape mShape;
+        thor::ConcaveShape mShape;
 };
 
 }
