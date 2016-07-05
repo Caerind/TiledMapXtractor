@@ -51,6 +51,10 @@ class ObjectBase : public detail::PropertiesHolder, public sf::Drawable
         sf::Vector2f mSize;
         float mRotation;
         bool mVisible;
+
+        bool mFlippedHorizontally;
+        bool mFlippedVertically;
+        bool mFlippedDiagonally;
 };
 
 }

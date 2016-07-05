@@ -14,6 +14,9 @@ ObjectBase::ObjectBase(ObjectGroup& group)
 , mSize({0.f, 0.f})
 , mRotation(0.f)
 , mVisible(true)
+, mFlippedHorizontally(false)
+, mFlippedVertically(false)
+, mFlippedDiagonally(false)
 {
 }
 
@@ -32,6 +35,7 @@ void ObjectBase::loadFromNode(pugi::xml_node const& object)
         if (attr.name() == std::string("gid"))
         {
             mGid = attr.as_uint();
+            detail::readFlip(mGid, mFlippedHorizontally, mFlippedVertically, mFlippedDiagonally);
         }
         if (attr.name() == std::string("name"))
         {
@@ -84,6 +88,7 @@ void ObjectBase::saveToNode(pugi::xml_node& object)
     if (mGid != 0)
     {
         object.append_attribute("gid") = mGid;
+        // TODO : Save Flip
     }
     if (mName != "")
     {

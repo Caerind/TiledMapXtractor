@@ -40,6 +40,9 @@ enum ObjectType
 namespace detail
 {
 
+void readFlip(unsigned int& gid);
+void readFlip(unsigned int& gid, bool& horizontal, bool& vertical, bool& diagonal);
+
 template <typename T>
 std::string toString(T const& value)
 {

@@ -4,12 +4,11 @@
 
 int main()
 {
-    sf::RenderWindow window(sf::VideoMode(600,600), "SFML works!");
+    sf::RenderWindow window(sf::VideoMode(0,144), "SFML works!");
 
     tmx::Map map;
     map.loadFromFile("sans-titre.tmx");
     map.setRenderObjects(true);
-    map.saveToFile("titre.tmx");
 
     sf::View view = window.getView();
     sf::Clock clock;

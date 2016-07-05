@@ -6,6 +6,23 @@ namespace tmx
 namespace detail
 {
 
+const unsigned int FLIPPED_HORIZONTALLY_FLAG = 0x80000000;
+const unsigned int FLIPPED_VERTICALLY_FLAG   = 0x40000000;
+const unsigned int FLIPPED_DIAGONALLY_FLAG   = 0x20000000;
+
+void readFlip(unsigned int& gid)
+{
+    gid &= ~(FLIPPED_HORIZONTALLY_FLAG | FLIPPED_VERTICALLY_FLAG | FLIPPED_DIAGONALLY_FLAG);
+}
+
+void readFlip(unsigned int& gid, bool& horizontal, bool& vertical, bool& diagonal)
+{
+    horizontal = (gid & FLIPPED_HORIZONTALLY_FLAG);
+    vertical = (gid & FLIPPED_VERTICALLY_FLAG);
+    diagonal = (gid & FLIPPED_DIAGONALLY_FLAG);
+    gid &= ~(FLIPPED_HORIZONTALLY_FLAG | FLIPPED_VERTICALLY_FLAG | FLIPPED_DIAGONALLY_FLAG);
+}
+
 PropertiesHolder::PropertiesHolder()
 : mProperites()
 {

@@ -73,7 +73,9 @@ bool Layer::loadFromNode(pugi::xml_node const& layer)
         }
         for (std::size_t i = 0; i < byteVector.size() - 3; i += 4)
         {
-            setTileId(coords, byteVector[i] | byteVector[i+1] << 8 | byteVector[i+2] << 16 | byteVector[i+3] << 24);
+            unsigned int gid = byteVector[i] | byteVector[i+1] << 8 | byteVector[i+2] << 16 | byteVector[i+3] << 24;
+            detail::readFlip(gid);
+            setTileId(coords, gid);
             coords.x = (coords.x + 1) % size.x;
             if (coords.x == 0)
             {
@@ -85,14 +87,15 @@ bool Layer::loadFromNode(pugi::xml_node const& layer)
     {
         std::string temp(dataNode.text().get());
         std::stringstream data(temp);
-        unsigned int id;
-        while (data >> id)
+        unsigned int gid;
+        while (data >> gid)
         {
             if (data.peek() == ',')
             {
                 data.ignore();
             }
-            setTileId(coords, id);
+            detail::readFlip(gid);
+            setTileId(coords, gid);
             coords.x = (coords.x + 1) % size.x;
             if (coords.x == 0)
             {
@@ -104,15 +107,13 @@ bool Layer::loadFromNode(pugi::xml_node const& layer)
     {
         for (pugi::xml_node tile = dataNode.child("tile"); tile; tile = tile.next_sibling("tile"))
         {
-            pugi::xml_attribute id = tile.attribute("gid");
-            if (id)
+            unsigned int gid = tile.attribute("gid").as_uint();
+            detail::readFlip(gid);
+            setTileId(coords, gid);
+            coords.x = (coords.x + 1) % size.x;
+            if (coords.x == 0)
             {
-                setTileId(coords, id.as_uint());
-                coords.x = (coords.x + 1) % size.x;
-                if (coords.x == 0)
-                {
-                    coords.y++;
-                }
+                coords.y++;
             }
         }
     }

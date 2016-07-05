@@ -20,7 +20,6 @@ ObjectType Object::getObjectType() const
 void Object::update()
 {
     mShape.setSize(mSize);
-    mShape.setRotation(mRotation);
     if (mGid != 0)
     {
         Tileset* tileset = mGroup.getMap().getTileset(mGid);
@@ -30,20 +29,40 @@ void Object::update()
         }
         mShape.setTexture(&tileset->getTexture());
         mShape.setTextureRect(tileset->toRect(mGid));
-        // TODO : Tile Flipping
+
         std::string orientation = mGroup.getMap().getOrientation();
         if (orientation == "orthogonal")
         {
-            mShape.setPosition(mPosition - sf::Vector2f(0.f, mSize.y));
+            mShape.setOrigin(sf::Vector2f(0.f, mSize.x));
         }
         else
         {
-            mShape.setPosition(mPosition - sf::Vector2f(mSize.x * 0.5f, mSize.y));
+            mShape.setOrigin(mSize.x * 0.5f, mSize.y);
         }
+        mShape.setRotation(mRotation);
+        mShape.setPosition(mPosition);
+
+        /*
+        sf::Vector2f scale = sf::Vector2f(1.f, 1.f);
+        if (mFlippedHorizontally)
+        {
+            scale.x = -1.f;
+            mShape.move(mSize.x, 0.f);
+        }
+        if (mFlippedVertically)
+        {
+            scale.y = -1.f;
+            mShape.move(0.f, mSize.y);
+        }
+        mShape.setScale(scale);
+        // TODO : Flipped diagonally
+        */
+
         mShape.setOutlineThickness(0.f);
     }
     else
     {
+        mShape.setRotation(mRotation);
         mShape.setOutlineThickness(2.f);
         mShape.setPosition(mPosition);
     }
