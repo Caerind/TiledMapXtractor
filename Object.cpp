@@ -58,6 +58,14 @@ void Object::setColor(sf::Color const& color)
         mShape.setOutlineColor(color);
         mShape.setFillColor(c);
     }
+    else
+    {
+        sf::Color c = color;
+        c.r = 255;
+        c.g = 255;
+        c.b = 255;
+        mShape.setFillColor(c);
+    }
 }
 
 void Object::draw(sf::RenderTarget& target, sf::RenderStates states) const

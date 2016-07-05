@@ -19,6 +19,8 @@ class ObjectGroup : public LayerBase
         bool loadFromNode(pugi::xml_node const& layer);
         void saveToNode(pugi::xml_node& layer);
 
+        void update();
+
         void draw(sf::RenderTarget& target, sf::RenderStates states = sf::RenderStates()) const;
 
         sf::Color getColor() const;

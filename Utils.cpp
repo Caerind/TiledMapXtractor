@@ -172,6 +172,10 @@ LayerBase::LayerBase()
 {
 }
 
+void LayerBase::update()
+{
+}
+
 bool LayerBase::loadFromNode(pugi::xml_node const& layer)
 {
     if (!layer)
@@ -259,11 +263,13 @@ void LayerBase::setName(std::string const& name)
 void LayerBase::setOffset(sf::Vector2f const& offset)
 {
     mOffset = offset;
+    update();
 }
 
 void LayerBase::setOpacity(float opacity)
 {
     mOpacity = opacity;
+    update();
 }
 
 void LayerBase::setVisible(bool visible)
@@ -369,6 +375,12 @@ bool ImageLayer::loadImage()
     {
         return false;
     }
+    update();
+    return true;
+}
+
+void ImageLayer::update()
+{
     sf::Vector2f textureSize = static_cast<sf::Vector2f>(mTexture.getSize());
     sf::Color color = sf::Color(255,255,255,static_cast<unsigned char>(255.f * mOpacity));
     mVertices[0] = sf::Vertex(sf::Vector2f(0.f, 0.f), color, sf::Vector2f(0.f, 0.f));
@@ -377,7 +389,6 @@ bool ImageLayer::loadImage()
     mVertices[3] = mVertices[2];
     mVertices[4] = sf::Vertex(sf::Vector2f(0.f, textureSize.y), color, sf::Vector2f(0.f, textureSize.y));
     mVertices[5] = mVertices[0];
-    return true;
 }
 
 void ImageLayer::draw(sf::RenderTarget& target, sf::RenderStates states) const

@@ -9,6 +9,7 @@ int main()
     tmx::Map map;
     map.loadFromFile("sans-titre.tmx");
     map.setRenderObjects(true);
+    map.saveToFile("titre.tmx");
 
     sf::View view = window.getView();
     sf::Clock clock;

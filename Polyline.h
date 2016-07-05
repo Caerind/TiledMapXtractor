@@ -18,7 +18,8 @@ class Polyline : public ObjectBase
         void saveToNode(pugi::xml_node& object);
         void update();
 
-        void addPoint(sf::Vector2f const& point, std::size_t index = 1000); // TODO : Find something else
+        void addPoint(sf::Vector2f const& point);
+        void addPoint(sf::Vector2f const& point, std::size_t index);
         sf::Vector2f getPoint(std::size_t index) const;
         void setPoint(std::size_t index, sf::Vector2f const& point);
         void removePoint(std::size_t index);

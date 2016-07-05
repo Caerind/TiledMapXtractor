@@ -74,21 +74,20 @@ void Polygon::update()
     mShape.setRotation(mRotation);
 }
 
+void Polygon::addPoint(sf::Vector2f const& point)
+{
+    mShape.setPointCount(mShape.getPointCount() + 1);
+    mShape.setPoint(mShape.getPointCount() - 1, point);
+}
+
 void Polygon::addPoint(sf::Vector2f const& point, std::size_t index)
 {
     mShape.setPointCount(mShape.getPointCount() + 1);
-    if (index == 1000)
+    for (std::size_t i = mShape.getPointCount() - 1; i >= index; i--)
     {
-        mShape.setPoint(mShape.getPointCount() - 1, point);
+        mShape.setPoint(i, mShape.getPoint(i-1));
     }
-    else
-    {
-        for (std::size_t i = mShape.getPointCount() - 1; i >= index; i--)
-        {
-            mShape.setPoint(i, mShape.getPoint(i-1));
-        }
-        mShape.setPoint(index, point);
-    }
+    mShape.setPoint(index, point);
 }
 
 sf::Vector2f Polygon::getPoint(std::size_t index) const

@@ -212,6 +212,7 @@ class LayerBase : public detail::PropertiesHolder, public sf::Drawable
         virtual void draw(sf::RenderTarget& target, sf::RenderStates states = sf::RenderStates()) const = 0;
 
         virtual LayerType getLayerType() const = 0;
+        virtual void update();
 
         virtual bool loadFromNode(pugi::xml_node const& layer);
         virtual void saveToNode(pugi::xml_node& layer);
@@ -254,6 +255,7 @@ class ImageLayer : public LayerBase
         void setSize(sf::Vector2u const& size);
 
         bool loadImage();
+        void update();
 
         void draw(sf::RenderTarget& target, sf::RenderStates states = sf::RenderStates()) const;
 

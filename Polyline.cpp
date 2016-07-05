@@ -66,6 +66,12 @@ void Polyline::update()
     }
 }
 
+void Polyline::addPoint(sf::Vector2f const& point)
+{
+    mPoints.push_back(point);
+    update();
+}
+
 void Polyline::addPoint(sf::Vector2f const& point, std::size_t index)
 {
     mPoints.insert(mPoints.begin() + index, point);

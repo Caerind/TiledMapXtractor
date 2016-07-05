@@ -39,7 +39,6 @@ class ObjectBase : public detail::PropertiesHolder, public sf::Drawable
 
         virtual void draw(sf::RenderTarget& target, sf::RenderStates states = sf::RenderStates()) const = 0;
 
-    protected:
         virtual void update();
 
     protected:

@@ -167,7 +167,7 @@ bool Map::saveToFile(std::string const& filename)
         mLayers[i]->saveToNode(layer);
     }
 
-    doc.save_file(filename.c_str());
+    doc.save_file(filename.c_str()," ");
     return true;
 }
 

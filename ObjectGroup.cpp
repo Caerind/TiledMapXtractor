@@ -62,11 +62,7 @@ bool ObjectGroup::loadFromNode(pugi::xml_node const& layer)
         }
         mObjects.back()->loadFromNode(object);
     }
-    for (std::size_t i = 0; i < mObjects.size(); i++)
-    {
-        mObjects[i]->setColor(getColor());
-    }
-    sort(mDrawOrder);
+    update();
     return true;
 }
 
@@ -93,6 +89,17 @@ void ObjectGroup::saveToNode(pugi::xml_node& layer)
     }
 }
 
+void ObjectGroup::update()
+{
+    sf::Color color = getColor();
+    for (std::size_t i = 0; i < mObjects.size(); i++)
+    {
+        mObjects[i]->setColor(color); // Apply color and opacity
+        mObjects[i]->update();
+    }
+    sort(mDrawOrder);
+}
+
 void ObjectGroup::draw(sf::RenderTarget& target, sf::RenderStates states) const
 {
     if (mVisible)
@@ -114,6 +121,7 @@ sf::Color ObjectGroup::getColor() const
 
 void ObjectGroup::setColor(sf::Color const& color)
 {
+    setOpacity((float)color.a / 255.f);
     mColor = detail::toString<sf::Color>(color);
     for (std::size_t i = 0; i < mObjects.size(); i++)
     {

@@ -29,12 +29,12 @@ bool Layer::loadFromNode(pugi::xml_node const& layer)
     {
         return false;
     }
-    pugi::xml_node data = layer.child("data");
-    if (!data)
+    pugi::xml_node dataNode = layer.child("data");
+    if (!dataNode)
     {
         return false;
     }
-    for (pugi::xml_attribute attr = data.first_attribute(); attr; attr = attr.next_attribute())
+    for (pugi::xml_attribute attr = dataNode.first_attribute(); attr; attr = attr.next_attribute())
     {
         if (attr.name() == std::string("encoding"))
         {
@@ -46,9 +46,75 @@ bool Layer::loadFromNode(pugi::xml_node const& layer)
         }
     }
     update();
-    if (!loadFromCode(data.text().get()))
+    sf::Vector2u coords;
+    sf::Vector2u size = mMap.getMapSize();
+    if (mEncoding == "base64")
     {
-        return false;
+        std::string data;
+        std::stringstream ss;
+        ss << dataNode.text().get();
+        ss >> data;
+        if (!base64_decode(data))
+        {
+            return false;
+        }
+        if (mCompression != "")
+        {
+            if (!decompressString(data))
+            {
+                return false;
+            }
+        }
+        std::vector<unsigned char> byteVector;
+        byteVector.reserve(size.x * size.y * 4);
+        for (std::string::iterator i = data.begin(); i != data.end(); ++i)
+        {
+            byteVector.push_back(*i);
+        }
+        for (std::size_t i = 0; i < byteVector.size() - 3; i += 4)
+        {
+            setTileId(coords, byteVector[i] | byteVector[i+1] << 8 | byteVector[i+2] << 16 | byteVector[i+3] << 24);
+            coords.x = (coords.x + 1) % size.x;
+            if (coords.x == 0)
+            {
+                coords.y++;
+            }
+        }
+    }
+    else if (mEncoding == "csv")
+    {
+        std::string temp(dataNode.text().get());
+        std::stringstream data(temp);
+        unsigned int id;
+        while (data >> id)
+        {
+            if (data.peek() == ',')
+            {
+                data.ignore();
+            }
+            setTileId(coords, id);
+            coords.x = (coords.x + 1) % size.x;
+            if (coords.x == 0)
+            {
+                coords.y++;
+            }
+        }
+    }
+    else
+    {
+        for (pugi::xml_node tile = dataNode.child("tile"); tile; tile = tile.next_sibling("tile"))
+        {
+            pugi::xml_attribute id = tile.attribute("gid");
+            if (id)
+            {
+                setTileId(coords, id.as_uint());
+                coords.x = (coords.x + 1) % size.x;
+                if (coords.x == 0)
+                {
+                    coords.y++;
+                }
+            }
+        }
     }
     return true;
 }
@@ -62,10 +128,79 @@ void Layer::saveToNode(pugi::xml_node& layer)
     LayerBase::saveToNode(layer);
     layer.append_attribute("width") = mMap.getMapSize().x;
     layer.append_attribute("height") = mMap.getMapSize().y;
-    pugi::xml_node data = layer.append_child("data");
-    data.append_attribute("encoding") = mEncoding.c_str();
-    data.append_attribute("compression") = mCompression.c_str();
-    data.text().set(getCode().c_str());
+    pugi::xml_node dataNode = layer.append_child("data");
+    if (!dataNode)
+    {
+        return;
+    }
+    if (mEncoding != "")
+    {
+        dataNode.append_attribute("encoding") = mEncoding.c_str();
+    }
+    if (mCompression != "")
+    {
+        dataNode.append_attribute("compression") = mCompression.c_str();
+    }
+
+    std::string data;
+    sf::Vector2u coords;
+    sf::Vector2u size = mMap.getMapSize();
+    if (mEncoding == "base64")
+    {
+        data.reserve(size.x * size.y * 4);
+        for (coords.y = 0; coords.y < size.y; coords.y++)
+        {
+            for (coords.x = 0; coords.x < size.x; coords.x++)
+            {
+                const std::size_t id = getTileId(coords);
+                data.push_back((char)(id));
+                data.push_back((char)(id >> 8));
+                data.push_back((char)(id >> 16));
+                data.push_back((char)(id >> 24));
+            }
+        }
+        if (mCompression != "")
+        {
+            if (!compressString(data))
+            {
+                return;
+            }
+        }
+        if (!base64_encode(data))
+        {
+            return;
+        }
+        std::string out = "\n   " + data + "\n  ";
+        dataNode.text().set(out.c_str());
+    }
+    else if (mEncoding == "csv")
+    {
+        data += "\n";
+        for (coords.y = 0; coords.y < size.y; coords.y++)
+        {
+            for (coords.x = 0; coords.x < size.x; coords.x++)
+            {
+                data += detail::toString(getTileId(coords)) + ",";
+            }
+            data += "\n";
+        }
+        if (data.size() > 2)
+        {
+            data.erase(data.size()-2);
+            data += "\n  ";
+        }
+        dataNode.text().set(data.c_str());
+    }
+    else
+    {
+        for (coords.y = 0; coords.y < size.y; coords.y++)
+        {
+            for (coords.x = 0; coords.x < size.x; coords.x++)
+            {
+                dataNode.append_child("tile").append_attribute("gid") = getTileId(coords);
+            }
+        }
+    }
 }
 
 void Layer::setTileId(sf::Vector2u coords, unsigned int id)
@@ -73,15 +208,7 @@ void Layer::setTileId(sf::Vector2u coords, unsigned int id)
     if (0 <= coords.x && coords.x < mMap.getMapSize().x && 0 <= coords.y && coords.y < mMap.getMapSize().y)
     {
         sf::Vertex* tri = getVertex(coords);
-        if (id == 0 && tri != nullptr)
-        {
-            for (std::size_t i = 0; i < 6; i++)
-            {
-                tri[i].texCoords = sf::Vector2f(0.f, 0.f);
-                tri[i].color = sf::Color::Transparent;
-            }
-        }
-        else if (tri != nullptr)
+        if (id != 0 && tri != nullptr)
         {
             if (mTileset == nullptr)
             {
@@ -98,11 +225,6 @@ void Layer::setTileId(sf::Vector2u coords, unsigned int id)
                 tri[4].texCoords = sf::Vector2f(pos.x, pos.y + size.y);
                 tri[3].texCoords = tri[2].texCoords;
                 tri[5].texCoords = tri[0].texCoords;
-                for (std::size_t i = 0; i < 6; i++)
-                {
-                    tri[i].color = sf::Color::White;
-                    tri[i].color.a = 255 * mOpacity;
-                }
             }
         }
     }
@@ -113,7 +235,7 @@ unsigned int Layer::getTileId(sf::Vector2u coords)
     sf::Vector2u size = mMap.getMapSize();
     if (0 <= coords.x && coords.x < size.x && 0 <= coords.y && coords.y < size.y)
     {
-        sf::Vertex* tri = &mVertices[(coords.x + coords.y * size.x) * 6];
+        sf::Vertex* tri = getVertex(coords);
         if (tri[0].texCoords != tri[2].texCoords && mTileset != nullptr)
         {
             return mTileset->toId(sf::Vector2u(tri->texCoords.x, tri->texCoords.y));
@@ -141,17 +263,7 @@ void Layer::draw(sf::RenderTarget& target, sf::RenderStates states) const
 
 bool Layer::loadFromCode(std::string const& code)
 {
-    if (mEncoding != "base64")
-    {
-        return false;
-    }
-    if (mCompression != "zlib")
-    {
-        return false;
-    }
-
-    // TODO : Handle decoding and decompressing
-
+    sf::Vector2u size = mMap.getMapSize();
     sf::Vector2u coords;
     std::string data;
     std::stringstream ss;
@@ -162,7 +274,6 @@ bool Layer::loadFromCode(std::string const& code)
         return false;
     }
     std::vector<unsigned char> byteVector;
-    sf::Vector2u size = mMap.getMapSize();
     byteVector.reserve(size.x * size.y * 4);
     for (std::string::iterator i = data.begin(); i != data.end(); ++i)
     {
@@ -182,17 +293,6 @@ bool Layer::loadFromCode(std::string const& code)
 
 std::string Layer::getCode()
 {
-    if (mEncoding != "base64")
-    {
-        std::cerr << "Unsupported encoding : use base64" << std::endl;
-    }
-    if (mCompression != "zlib")
-    {
-        std::cerr << "Unsupported compression : use zlib" << std::endl;
-    }
-
-    // TODO : Handle encoding and compressing
-
     std::string data;
     sf::Vector2u size = mMap.getMapSize();
     data.reserve(size.x * size.y * 4);
@@ -208,11 +308,11 @@ std::string Layer::getCode()
             data.push_back((char)(id >> 24));
         }
     }
-    if (compress(data))
+    if (!compress(data))
     {
-        return data;
+        return "";
     }
-    return "";
+    return data;
 }
 
 void Layer::update()
@@ -313,6 +413,11 @@ void Layer::update()
                 tri[4].position = sf::Vector2f(pos.x, pos.y + texSize.y);
                 tri[3].position = tri[2].position;
                 tri[5].position = tri[0].position;
+                sf::Color color = sf::Color(255,255,255,static_cast<unsigned char>(255.f * mOpacity));
+                for (std::size_t i = 0; i < 6; i++)
+                {
+                    tri[i].color = color;
+                }
             }
         }
     }
