@@ -52,7 +52,7 @@ class ObjectGroup : public LayerBase
 template <typename T>
 T* ObjectGroup::getObject(std::size_t index)
 {
-    return static_cast<T>(mObjects[index]);
+    return static_cast<T*>(mObjects[index]);
 }
 
 template <typename T>

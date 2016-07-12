@@ -13,14 +13,31 @@ Library for [Tiled](http://www.mapeditor.org/) maps with [SFML](https://github.c
 - External tileset (.tsx)
 - Almost all .tmx data (Please use the issue tracker if your output isn't the same as your Tiled editor)
 
-## What is not supported / TODO
-
-As the library is young, most features will be added soon
+## What is not supported
 
 - Multiple tilesets for rendering (only one tileset per layer)
-- Tileset:Tile:ObjectGroup
-- Tileset:Tile:Image
-- Image:Data
+- Tileset:Tile:ObjectGroup and Tileset:Tile:Image
+- Image from data
+
+## TODO
+
+Tileset part :
+- Terrains usage in-game
+- Animation using the .tmx data (even if not supported by Tiled at the moment)
+- Load/Save image as data in the .tmx
+- ObjectGroup and Image in Tileset:Tile, but what is this ?
+
+Layer part :
+- More testing and optimizations
+- Get the bounds of the layer depending on the orientation
+
+ObjectGroup part :
+- Tile Flipping
+
+Map part :
+- Conversion of coordinates
+- ResourceManager
+
 
 ## Requirements
 

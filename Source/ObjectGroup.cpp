@@ -104,7 +104,6 @@ void ObjectGroup::draw(sf::RenderTarget& target, sf::RenderStates states) const
 {
     if (mVisible)
     {
-        states.transform.translate(mOffset);
         for (std::size_t i = 0; i < mObjects.size(); i++)
         {
             target.draw(*mObjects.at(i), states);

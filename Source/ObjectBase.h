@@ -37,6 +37,12 @@ class ObjectBase : public detail::PropertiesHolder, public sf::Drawable
         void setRotation(float rotation);
         void setVisible(bool visible);
 
+        const sf::Vector2f& getLayerOffset() const;
+        void setLayerOffset(sf::Vector2f const& offset);
+
+        const sf::Vector2f& getMapOffset() const;
+        void setMapOffset(sf::Vector2f const& offset);
+
         virtual void draw(sf::RenderTarget& target, sf::RenderStates states = sf::RenderStates()) const = 0;
 
         virtual void update();

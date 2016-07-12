@@ -25,7 +25,7 @@ void Ellipse::setPointCount(std::size_t count)
 
 void Ellipse::update()
 {
-    mShape.setPosition(mPosition + mSize * 0.5f);
+    mShape.setPosition(mPosition + mSize * 0.5f + getLayerOffset() + getMapOffset());
     mShape.setRotation(mRotation);
     mShape.setPointCount(mPointCount);
     mShape.setOutlineThickness(2.f);

@@ -20,13 +20,11 @@ void Polyline::loadFromNode(pugi::xml_node const& object)
     pugi::xml_node polyline = object.child("polyline");
     if (!polyline)
     {
-        std::cerr << "Polyline without polygon node" << std::endl;
         return;
     }
     pugi::xml_attribute attr = polyline.attribute("points");
     if (!attr)
     {
-        std::cerr << "Polyline without points attribute" << std::endl;
         return;
     }
     std::string point;
@@ -58,7 +56,7 @@ void Polyline::update()
         {
             sf::Vector2f pos = mPoints[i];
             sf::Vector2f diff = mPoints[i+1] - pos;
-            mShapes[i].setPosition(pos + mPosition);
+            mShapes[i].setPosition(pos + mPosition + getLayerOffset() + getMapOffset());
             mShapes[i].setSize(sf::Vector2f(std::sqrt(diff.x * diff.x + diff.y * diff.y), 0.f));
             mShapes[i].setRotation(std::atan2(diff.y,diff.x) * 180.f / 3.141592654f);
             mShapes[i].setOutlineThickness(1.f);

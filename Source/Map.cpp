@@ -6,41 +6,80 @@ namespace tmx
 {
 
 Map::Map()
-: mVersion(1.0f)
-, mOrientation("orthogonal")
-, mRenderOrder("right-down")
-, mMapSize({0, 0})
-, mTileSize({0, 0})
-, mHexSideLength(0)
-, mStaggerAxis("")
-, mStaggerIndex("")
-, mBackgroundColor("#808080")
-, mNextObjectId(1)
-, mRenderObjects(false)
-, mTilesets()
-, mLayers()
 {
+    clear();
+}
+
+Map::~Map()
+{
+    clear();
+}
+
+void Map::clear()
+{
+    mVersion = 1.0f;
+    mOrientation = "orthogonal";
+    mRenderOrder = "right-down";
+    mMapSize = sf::Vector2i({0, 0});
+    mTileSize= sf::Vector2i({0, 0});
+    mHexSideLength = 0;
+    mStaggerAxis = "";
+    mStaggerIndex = "";
+    mBackgroundColor = "#808080";
+    mNextObjectId = 1;
+    mPath = "";
+    mRenderObjects = false;
+    for (std::size_t i = 0; i < mTilesets.size(); i++)
+    {
+        delete mTilesets[i];
+    }
+    mTilesets.clear();
+    for (std::size_t i = 0; i < mLayers.size(); i++)
+    {
+        delete mLayers[i];
+    }
+    mLayers.clear();
 }
 
 bool Map::loadFromFile(std::string const& filename)
 {
+    clear();
+
     if (filename == "")
     {
-        std::cerr << "Uncorrect filename" << std::endl;
         return false;
     }
 
     pugi::xml_document doc;
     if (!doc.load_file(filename.c_str()))
     {
-        std::cerr << "The document (" << filename << ") cannot be loaded" << std::endl;
+        detail::log("Unable to load map from file : " + filename);
         return false;
+    }
+    else
+    {
+        std::size_t found = filename.find_last_of("/");
+        if (found != std::string::npos)
+        {
+            mPath = filename.substr(0, found+1);
+        }
+        else
+        {
+            found = filename.find_last_of("\\");
+            if (found != std::string::npos)
+            {
+                mPath = filename.substr(0, found+1);
+            }
+            else
+            {
+                mPath = "";
+            }
+        }
     }
 
     pugi::xml_node map = doc.child("map");
     if (!map)
     {
-        std::cerr << "The document has no \"map\" node" << std::endl;
         return false;
     }
 
@@ -49,10 +88,10 @@ bool Map::loadFromFile(std::string const& filename)
         if (attr.name() == std::string("version")) mVersion = attr.as_float();
         if (attr.name() == std::string("orientation")) mOrientation = attr.as_string();
         if (attr.name() == std::string("renderorder")) mRenderOrder = attr.as_string();
-        if (attr.name() == std::string("width")) mMapSize.x = attr.as_uint();
-        if (attr.name() == std::string("height")) mMapSize.y = attr.as_uint();
-        if (attr.name() == std::string("tilewidth")) mTileSize.x = attr.as_uint();
-        if (attr.name() == std::string("tileheight")) mTileSize.y = attr.as_uint();
+        if (attr.name() == std::string("width")) mMapSize.x = attr.as_int();
+        if (attr.name() == std::string("height")) mMapSize.y = attr.as_int();
+        if (attr.name() == std::string("tilewidth")) mTileSize.x = attr.as_int();
+        if (attr.name() == std::string("tileheight")) mTileSize.y = attr.as_int();
         if (attr.name() == std::string("hexsidelength")) mHexSideLength = attr.as_uint();
         if (attr.name() == std::string("staggeraxis")) mStaggerAxis = attr.as_string();
         if (attr.name() == std::string("staggerindex")) mStaggerIndex = attr.as_string();
@@ -64,16 +103,14 @@ bool Map::loadFromFile(std::string const& filename)
 
     for (pugi::xml_node tileset = map.child("tileset"); tileset; tileset = tileset.next_sibling("tileset"))
     {
-        Tileset tset;
-        if (tset.loadFromNode(tileset))
+        Tileset* tset = new Tileset(*this);
+        if (tset->loadFromNode(tileset))
         {
-            if (std::find_if(mTilesets.begin(),mTilesets.end(),[&tset](Tileset const& t)->bool{return (t.getName() == tset.getName());}) == mTilesets.end())
+            if (std::find_if(mTilesets.begin(),mTilesets.end(),[&tset](Tileset* t)->bool{return (t->getName() == tset->getName());}) == mTilesets.end())
+            {
                 mTilesets.push_back(tset);
-            else
-                std::cerr << "Tileset already loaded" << std::endl;
+            }
         }
-        else
-            std::cerr << "Tileset has not been loaded" << std::endl;
     }
     for (pugi::xml_node layer = map.child("layer"); layer; layer = layer.next_sibling("layer"))
     {
@@ -82,11 +119,7 @@ bool Map::loadFromFile(std::string const& filename)
         {
             if (std::find_if(mLayers.begin(),mLayers.end(),[&lyr](LayerBase* l)->bool{return (l->getName() == lyr->getName());}) == mLayers.end())
                 mLayers.push_back(lyr);
-            else
-                std::cerr << "Layer already loaded" << std::endl;
         }
-        else
-            std::cerr << "Layer has not been loaded" << std::endl;
     }
     for (pugi::xml_node objectgroup = map.child("objectgroup"); objectgroup; objectgroup = objectgroup.next_sibling("objectgroup"))
     {
@@ -95,11 +128,7 @@ bool Map::loadFromFile(std::string const& filename)
         {
             if (std::find_if(mLayers.begin(),mLayers.end(),[&obj](LayerBase* l)->bool{return (l->getName() == obj->getName());}) == mLayers.end())
                 mLayers.push_back(obj);
-            else
-                std::cerr << "ObjectGroup already loaded" << std::endl;
         }
-        else
-            std::cerr << "ObjectGroup has not been loaded" << std::endl;
     }
     for (pugi::xml_node imagelayer = map.child("imagelayer"); imagelayer; imagelayer = imagelayer.next_sibling("imagelayer"))
     {
@@ -108,11 +137,7 @@ bool Map::loadFromFile(std::string const& filename)
         {
             if (std::find_if(mLayers.begin(),mLayers.end(),[&lyr](LayerBase* l)->bool{return (l->getName() == lyr->getName());}) == mLayers.end())
                 mLayers.push_back(lyr);
-            else
-                std::cerr << "ImageLayer already loaded" << std::endl;
         }
-        else
-            std::cerr << "ImageLayer has not been loaded" << std::endl;
     }
 
     return true;
@@ -122,7 +147,6 @@ bool Map::saveToFile(std::string const& filename)
 {
     if (filename == "")
     {
-        std::cerr << "Uncorrect filename" << std::endl;
         return false;
     }
     pugi::xml_document doc;
@@ -141,7 +165,7 @@ bool Map::saveToFile(std::string const& filename)
         map.append_attribute("staggeraxis") = mStaggerAxis.c_str();
         map.append_attribute("staggerindex") = mStaggerIndex.c_str();
     }
-    if (mBackgroundColor != "")
+    if (mBackgroundColor != "#808080")
         map.append_attribute("backgroundcolor") = mBackgroundColor.c_str();
     map.append_attribute("nextobjectid") = mNextObjectId;
 
@@ -150,8 +174,8 @@ bool Map::saveToFile(std::string const& filename)
     for (std::size_t i = 0; i < mTilesets.size(); i++)
     {
         pugi::xml_node tileset = map.append_child("tileset");
-        if (!mTilesets[i].saveToNode(tileset))
-            std::cerr << "Tileset " << mTilesets[i].getName() << " hasn't been save correctly" << std::endl;
+        if (!mTilesets[i]->saveToNode(tileset))
+            return false;
     }
 
     for (std::size_t i = 0; i < mLayers.size(); i++)
@@ -188,7 +212,25 @@ LayerType Map::getLayerType(std::size_t index)
 
 void Map::removeLayer(std::string const& name)
 {
-    mLayers.erase(std::remove_if(mLayers.begin(),mLayers.end(),[&name](LayerBase* l)->bool{return l->getName() == name;}),mLayers.end());
+    std::size_t size = mLayers.size();
+    for (std::size_t i = 0; i < size;)
+    {
+        if (mLayers[i]->getName() == name)
+        {
+            delete mLayers[i];
+            mLayers.erase(mLayers.begin() + i);
+            size--;
+        }
+        else
+        {
+            i++;
+        }
+    }
+}
+
+sf::Vector2i Map::worldToCoords(sf::Vector2f const& world)
+{
+    return tmx::worldToCoords(mOrientation, world, mTileSize, mStaggerAxis, mStaggerIndex, mHexSideLength);
 }
 
 void Map::renderBackground(sf::RenderTarget& target)
@@ -225,41 +267,87 @@ void Map::render(std::size_t index, sf::RenderTarget& target, sf::RenderStates s
     {
         target.draw(*mLayers.at(index), states);
     }
-    else
-    {
-        std::cerr << "Out of range" << std::endl;
-    }
+}
+
+std::size_t Map::getTilesetCount() const
+{
+    return mTilesets.size();
 }
 
 Tileset* Map::getTileset(unsigned int id)
 {
     for (std::size_t i = 0; i < mTilesets.size(); i++)
     {
-        unsigned int first = mTilesets[i].getFirstGid();
-        if (first <= id && id < first + mTilesets[i].getTileCount())
+        unsigned int first = mTilesets[i]->getFirstGid();
+        if (first <= id && id < first + mTilesets[i]->getTileCount())
         {
-            return &mTilesets[i];
+            return mTilesets[i];
         }
     }
     return nullptr;
 }
 
-std::string Map::getOrientation() const
+Tileset* Map::getTileset(std::string const& name)
+{
+    for (std::size_t i = 0; i < mTilesets.size(); i++)
+    {
+        if (mTilesets[i]->getName() == name)
+        {
+            return mTilesets[i];
+        }
+    }
+    return nullptr;
+}
+
+Tileset* Map::createTileset(std::string const& name)
+{
+    if (name != "")
+    {
+        if (std::find_if(mTilesets.begin(),mTilesets.end(),[&name](Tileset* t)->bool{return (t->getName() == name);}) == mTilesets.end())
+        {
+            Tileset* t = new Tileset(*this);
+            t->setName(name);
+            mTilesets.push_back(t);
+            return t;
+        }
+    }
+    return nullptr;
+}
+
+void Map::removeTileset(std::string const& name)
+{
+    std::size_t size = mTilesets.size();
+    for (std::size_t i = 0; i < size;)
+    {
+        if (mTilesets[i]->getName() == name)
+        {
+            delete mTilesets[i];
+            mTilesets.erase(mTilesets.begin() + i);
+            size--;
+        }
+        else
+        {
+            i++;
+        }
+    }
+}
+
+const std::string& Map::getOrientation() const
 {
     return mOrientation;
 }
 
-std::string Map::getRenderOrder() const
+const std::string& Map::getRenderOrder() const
 {
     return mRenderOrder;
 }
 
-sf::Vector2u Map::getMapSize() const
+const sf::Vector2i& Map::getMapSize() const
 {
     return mMapSize;
 }
 
-sf::Vector2u Map::getTileSize() const
+const sf::Vector2i& Map::getTileSize() const
 {
     return mTileSize;
 }
@@ -269,14 +357,79 @@ unsigned int Map::getHexSideLength() const
     return mHexSideLength;
 }
 
-std::string Map::getStaggerAxis() const
+const std::string& Map::getStaggerAxis() const
 {
     return mStaggerAxis;
 }
 
-std::string Map::getStaggerIndex() const
+const std::string& Map::getStaggerIndex() const
 {
     return mStaggerIndex;
+}
+
+const std::string& Map::getBackgroundColor() const
+{
+    return mBackgroundColor;
+}
+
+unsigned int Map::getNextObjectId() const
+{
+    return mNextObjectId;
+}
+
+void Map::setOrientation(std::string const& orientation)
+{
+    mOrientation = orientation;
+}
+
+void Map::setRenderOrder(std::string const& renderOrder)
+{
+    mRenderOrder = renderOrder;
+}
+
+void Map::setMapSize(sf::Vector2i const& mapSize)
+{
+    mMapSize = mapSize;
+}
+
+void Map::setTileSize(sf::Vector2i const& tileSize)
+{
+    mTileSize = tileSize;
+}
+
+void Map::setHexSideLength(unsigned int hexSide)
+{
+    mHexSideLength = hexSide;
+}
+
+void Map::setStaggerAxis(std::string const& axis)
+{
+    mStaggerAxis = axis;
+}
+
+void Map::setStaggerIndex(std::string const& index)
+{
+    mStaggerIndex = index;
+}
+
+void Map::setBackgroundColor(std::string const& color)
+{
+    mBackgroundColor = color;
+}
+
+void Map::setNextObjectId(unsigned int nextObject)
+{
+    mNextObjectId = nextObject;
+}
+
+const std::string& Map::getPath() const
+{
+    return mPath;
+}
+
+void Map::setPath(std::string const& path)
+{
+    mPath = path;
 }
 
 bool Map::getRenderObjects() const
@@ -287,6 +440,16 @@ bool Map::getRenderObjects() const
 void Map::setRenderObjects(bool renderObjects)
 {
     mRenderObjects = renderObjects;
+}
+
+const sf::Vector2f& Map::getMapOffset() const
+{
+    return mMapOffset;
+}
+
+void Map::setMapOffset(sf::Vector2f const& offset)
+{
+    mMapOffset = offset;
 }
 
 } // namespace tmx

@@ -1,14 +1,13 @@
 #include <SFML/Graphics.hpp>
 #include <iostream>
 #include "Map.hpp"
+#include "Layer.hpp"
 
 int main()
 {
-    sf::RenderWindow window(sf::VideoMode(0,144), "SFML works!");
+    sf::RenderWindow window(sf::VideoMode(512, 512), "TMX");
 
     tmx::Map map;
-    map.loadFromFile("sans-titre.tmx");
-    map.setRenderObjects(true);
 
     sf::View view = window.getView();
     sf::Clock clock;
@@ -34,6 +33,8 @@ int main()
             }
         }
 
+        sf::Time dt = clock.restart();
+
         sf::Vector2f mvt;
         if (sf::Keyboard::isKeyPressed(sf::Keyboard::Z))
             mvt.y--;
@@ -43,7 +44,7 @@ int main()
             mvt.x--;
         if (sf::Keyboard::isKeyPressed(sf::Keyboard::D))
             mvt.x++;
-        view.move(mvt * clock.restart().asSeconds() * 100.f);
+        view.move(mvt * dt.asSeconds() * 100.f);
 
         window.clear();
         window.setView(view);

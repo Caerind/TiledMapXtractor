@@ -88,7 +88,7 @@ void ObjectBase::saveToNode(pugi::xml_node& object)
     if (mGid != 0)
     {
         object.append_attribute("gid") = mGid;
-        // TODO : Save Flip
+        // TODO : O - Save Flip
     }
     if (mName != "")
     {
@@ -203,6 +203,26 @@ void ObjectBase::setRotation(float rotation)
 void ObjectBase::setVisible(bool visible)
 {
     mVisible = visible;
+}
+
+const sf::Vector2f& ObjectBase::getLayerOffset() const
+{
+    return mGroup.getOffset();
+}
+
+void ObjectBase::setLayerOffset(sf::Vector2f const& offset)
+{
+    mGroup.setOffset(offset);
+}
+
+const sf::Vector2f& ObjectBase::getMapOffset() const
+{
+    return mGroup.getMap().getMapOffset();
+}
+
+void ObjectBase::setMapOffset(sf::Vector2f const& offset)
+{
+    mGroup.getMap().setMapOffset(offset);
 }
 
 void ObjectBase::update()

@@ -40,8 +40,9 @@ void Object::update()
             mShape.setOrigin(mSize.x * 0.5f, mSize.y);
         }
         mShape.setRotation(mRotation);
-        mShape.setPosition(mPosition);
+        mShape.setPosition(mPosition + getLayerOffset());
 
+        // TODO : O - Flip
         /*
         sf::Vector2f scale = sf::Vector2f(1.f, 1.f);
         if (mFlippedHorizontally)
@@ -55,7 +56,6 @@ void Object::update()
             mShape.move(0.f, mSize.y);
         }
         mShape.setScale(scale);
-        // TODO : Flipped diagonally
         */
 
         mShape.setOutlineThickness(0.f);
@@ -64,7 +64,7 @@ void Object::update()
     {
         mShape.setRotation(mRotation);
         mShape.setOutlineThickness(2.f);
-        mShape.setPosition(mPosition);
+        mShape.setPosition(mPosition + getLayerOffset() + getMapOffset());
     }
 }
 

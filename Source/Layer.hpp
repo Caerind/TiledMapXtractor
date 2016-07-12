@@ -19,18 +19,26 @@ class Layer : public LayerBase
         bool loadFromNode(pugi::xml_node const& layer);
         void saveToNode(pugi::xml_node& layer);
 
-        void setTileId(sf::Vector2u coords, unsigned int id);
-        unsigned int getTileId(sf::Vector2u coords);
+        sf::Vector2i worldToCoords(sf::Vector2f const& world);
+
+        void setTileId(sf::Vector2i coords, unsigned int id);
+        unsigned int getTileId(sf::Vector2i coords);
 
         void draw(sf::RenderTarget& target, sf::RenderStates states = sf::RenderStates()) const;
 
         bool loadFromCode(std::string const& code);
         std::string getCode();
 
+        const std::string& getEncoding() const;
+        void setEncoding(std::string const& encoding);
+
+        const std::string& getCompression() const;
+        void setCompression(std::string const& compression);
+
         void update();
 
     protected:
-        sf::Vertex* getVertex(sf::Vector2u const& coords);
+        sf::Vertex* getVertex(sf::Vector2i const& coords);
 
     protected:
         Map& mMap;

@@ -24,13 +24,11 @@ void Polygon::loadFromNode(pugi::xml_node const& object)
     pugi::xml_node polygon = object.child("polygon");
     if (!polygon)
     {
-        std::cerr << "Polygon without polygon node" << std::endl;
         return;
     }
     pugi::xml_attribute attr = polygon.attribute("points");
     if (!attr)
     {
-        std::cerr << "Polygon without points attribute" << std::endl;
         return;
     }
     std::string point;
@@ -70,7 +68,7 @@ void Polygon::saveToNode(pugi::xml_node& object)
 void Polygon::update()
 {
     mShape.setOutlineThickness(2.f);
-    mShape.setPosition(mPosition);
+    mShape.setPosition(mPosition + getLayerOffset() + getMapOffset());
     mShape.setRotation(mRotation);
 }
 

@@ -15,8 +15,8 @@
 #include <SFML/Graphics/VertexArray.hpp>
 
 #include "../ExtLibs/Compression.hpp"
-#include "../ExtLibs/pugixml.hpp"
 #include "../ExtLibs/ConcaveShape.hpp"
+#include "../ExtLibs/pugixml.hpp"
 
 namespace tmx
 {
@@ -38,9 +38,16 @@ enum ObjectType
     EPolyline
 };
 
+sf::Vector2i worldToOrthoCoords(sf::Vector2f const& world, sf::Vector2i const& tileSize);
+sf::Vector2i worldToIsoCoords(sf::Vector2f const& world, sf::Vector2i const& tileSize);
+sf::Vector2i worldToStaggerCoords(sf::Vector2f const& world, sf::Vector2i const& tileSize, std::string const& axis = "y", std::string const& index = "odd");
+sf::Vector2i worldToHexaCoords(sf::Vector2f const& world, sf::Vector2i const& tileSize, unsigned int hexSideLength = 0, std::string const& axis = "y", std::string const& index = "odd");
+sf::Vector2i worldToCoords(std::string const& orientation, sf::Vector2f const& world, sf::Vector2i const& tileSize, std::string const& axis = "y", std::string const& index = "odd", unsigned int hexSideLength = 0);
+
 namespace detail
 {
 
+void log(std::string const& message);
 void readFlip(unsigned int& gid);
 void readFlip(unsigned int& gid, bool& horizontal, bool& vertical, bool& diagonal);
 
@@ -72,8 +79,8 @@ template <> inline std::string toString<sf::Vector2f>(sf::Vector2f const& value)
 template <> inline std::string toString<sf::Color>(sf::Color const& value)
 {
     std::ostringstream oss;
-    oss << std::hex << value.toInteger();
-    return oss.str(); // TODO : Update with # when fully supported by Tiled
+    oss << "#" << std::hex << value.toInteger();
+    return oss.str();
 }
 
 template <typename T>
@@ -189,21 +196,26 @@ class Image
         bool loadFromNode(pugi::xml_node const& image);
         void saveToNode(pugi::xml_node& image);
 
+        const std::string& getData() const;
         const std::string& getFormat() const;
         const std::string& getSource() const;
-        sf::Color getTransparent() const;
-        const sf::Vector2u& getSize() const;
+        const sf::Color& getTransparent() const;
+        const sf::Vector2i& getSize() const;
 
+        void setData(std::string const& data);
         void setFormat(std::string const& format);
         void setSource(std::string const& image);
         void setTransparent(sf::Color const& color);
-        void setSize(sf::Vector2u const& size);
+        void setSize(sf::Vector2i const& size);
+
+        bool loadTexture(sf::Texture& texture, std::string const& additionalPath = "") const;
 
     protected:
+        std::string mData;
         std::string mFormat;
         std::string mSource;
-        std::string mTransparent;
-        sf::Vector2u mSize;
+        sf::Color mTransparent;
+        sf::Vector2i mSize;
 };
 
 } // namespace detail
@@ -248,15 +260,17 @@ class ImageLayer : public LayerBase
         bool loadFromNode(pugi::xml_node const& layer);
         void saveToNode(pugi::xml_node& layer);
 
+        const std::string& getData() const;
         const std::string& getSource() const;
         const std::string& getFormat() const;
-        sf::Color getTransparent() const;
-        const sf::Vector2u& getSize() const;
+        const sf::Color& getTransparent() const;
+        const sf::Vector2i& getSize() const;
 
+        void setData(std::string const& data);
         void setSource(std::string const& source);
         void setFormat(std::string const& format);
         void setTransparent(sf::Color const& transparent);
-        void setSize(sf::Vector2u const& size);
+        void setSize(sf::Vector2i const& size);
 
         bool loadImage();
         void update();

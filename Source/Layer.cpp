@@ -46,8 +46,8 @@ bool Layer::loadFromNode(pugi::xml_node const& layer)
         }
     }
     update();
-    sf::Vector2u coords;
-    sf::Vector2u size = mMap.getMapSize();
+    sf::Vector2i coords;
+    sf::Vector2i size = mMap.getMapSize();
     if (mEncoding == "base64")
     {
         std::string data;
@@ -144,8 +144,8 @@ void Layer::saveToNode(pugi::xml_node& layer)
     }
 
     std::string data;
-    sf::Vector2u coords;
-    sf::Vector2u size = mMap.getMapSize();
+    sf::Vector2i coords;
+    sf::Vector2i size = mMap.getMapSize();
     if (mEncoding == "base64")
     {
         data.reserve(size.x * size.y * 4);
@@ -204,7 +204,12 @@ void Layer::saveToNode(pugi::xml_node& layer)
     }
 }
 
-void Layer::setTileId(sf::Vector2u coords, unsigned int id)
+sf::Vector2i Layer::worldToCoords(sf::Vector2f const& world)
+{
+    return mMap.worldToCoords(world - mOffset);
+}
+
+void Layer::setTileId(sf::Vector2i coords, unsigned int id)
 {
     if (0 <= coords.x && coords.x < mMap.getMapSize().x && 0 <= coords.y && coords.y < mMap.getMapSize().y)
     {
@@ -218,8 +223,8 @@ void Layer::setTileId(sf::Vector2u coords, unsigned int id)
             }
             if (mTileset != nullptr)
             {
-                sf::Vector2u pos = mTileset->toPos(id);
-                sf::Vector2u size = mTileset->getTileSize();
+                sf::Vector2i pos = mTileset->toPos(id);
+                sf::Vector2i size = mTileset->getTileSize();
                 tri[0].texCoords = sf::Vector2f(pos.x, pos.y);
                 tri[1].texCoords = sf::Vector2f(pos.x + size.x, pos.y);
                 tri[2].texCoords = sf::Vector2f(pos.x + size.x, pos.y + size.y);
@@ -231,15 +236,15 @@ void Layer::setTileId(sf::Vector2u coords, unsigned int id)
     }
 }
 
-unsigned int Layer::getTileId(sf::Vector2u coords)
+unsigned int Layer::getTileId(sf::Vector2i coords)
 {
-    sf::Vector2u size = mMap.getMapSize();
+    sf::Vector2i size = mMap.getMapSize();
     if (0 <= coords.x && coords.x < size.x && 0 <= coords.y && coords.y < size.y)
     {
         sf::Vertex* tri = getVertex(coords);
         if (tri[0].texCoords != tri[2].texCoords && mTileset != nullptr)
         {
-            return mTileset->toId(sf::Vector2u(tri->texCoords.x, tri->texCoords.y));
+            return mTileset->toId(sf::Vector2i(tri->texCoords.x, tri->texCoords.y));
         }
     }
     return 0;
@@ -249,14 +254,11 @@ void Layer::draw(sf::RenderTarget& target, sf::RenderStates states) const
 {
     if (mVisible)
     {
+        states.transform.translate(mOffset + mMap.getMapOffset());
         if (mTileset != nullptr)
         {
-            states.transform.translate(mTileset->getTileOffset() + mOffset);
+            states.transform.translate(mTileset->getTileOffset());
             states.texture = &mTileset->getTexture();
-        }
-        else
-        {
-            states.transform.translate(mOffset);
         }
         target.draw(mVertices, states);
     }
@@ -264,8 +266,8 @@ void Layer::draw(sf::RenderTarget& target, sf::RenderStates states) const
 
 bool Layer::loadFromCode(std::string const& code)
 {
-    sf::Vector2u size = mMap.getMapSize();
-    sf::Vector2u coords;
+    sf::Vector2i size = mMap.getMapSize();
+    sf::Vector2i coords;
     std::string data;
     std::stringstream ss;
     ss << code;
@@ -295,9 +297,9 @@ bool Layer::loadFromCode(std::string const& code)
 std::string Layer::getCode()
 {
     std::string data;
-    sf::Vector2u size = mMap.getMapSize();
+    sf::Vector2i size = mMap.getMapSize();
     data.reserve(size.x * size.y * 4);
-    sf::Vector2u coords;
+    sf::Vector2i coords;
     for (coords.y = 0; coords.y < size.y; coords.y++)
     {
         for (coords.x = 0; coords.x < size.x; coords.x++)
@@ -316,10 +318,30 @@ std::string Layer::getCode()
     return data;
 }
 
+const std::string& Layer::getEncoding() const
+{
+    return mEncoding;
+}
+
+void Layer::setEncoding(std::string const& encoding)
+{
+    mEncoding = encoding;
+}
+
+const std::string& Layer::getCompression() const
+{
+    return mCompression;
+}
+
+void Layer::setCompression(std::string const& compression)
+{
+    mCompression = compression;
+}
+
 void Layer::update()
 {
     std::string orientation = mMap.getOrientation();
-    sf::Vector2u size = mMap.getMapSize();
+    sf::Vector2u size = static_cast<sf::Vector2u>(mMap.getMapSize());
     sf::Vector2f tileSize = static_cast<sf::Vector2f>(mMap.getTileSize());
     sf::Vector2f texSize;
     if (mTileset != nullptr)
@@ -405,7 +427,7 @@ void Layer::update()
                 }
             }
 
-            sf::Vertex* tri = getVertex({i,j});
+            sf::Vertex* tri = getVertex(sf::Vector2i(i, j));
             if (tri != nullptr)
             {
                 tri[0].position = sf::Vector2f(pos.x, pos.y);
@@ -424,7 +446,7 @@ void Layer::update()
     }
 }
 
-sf::Vertex* Layer::getVertex(sf::Vector2u const& coords)
+sf::Vertex* Layer::getVertex(sf::Vector2i const& coords)
 {
     std::string order = mMap.getRenderOrder();
     unsigned int tile;
